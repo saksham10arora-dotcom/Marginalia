@@ -1,7 +1,7 @@
 # Known issues / future work
 
-Tracked here locally while the repo is private. Move each to a real GitHub
-Issue when this goes public.
+Tracked here as a local backlog. Worth migrating to real GitHub Issues at
+some point, but no rush now that the repo's public.
 
 ## Portability (blocks public use)
 
@@ -21,6 +21,26 @@ Issue when this goes public.
   folder name and GitHub repo URL still don't match~~ — done. GitHub repo is
   now `Marginalia`, remote updated, git history squashed to drop every old
   reference.
+
+## Known bugs
+
+- **Multi-row LaTeX (`\begin{bmatrix}...\end{bmatrix}`, `pmatrix`, `cases`, etc.)
+  renders as flattened plain text instead of a real stacked matrix.** Found
+  while recording the demo GIF for this README (2026-08-19), on the "Vectors"
+  note's `2 \cdot \begin{bmatrix} 3 \\ 1 \end{bmatrix} = \begin{bmatrix} 6 \\ 2
+  \end{bmatrix}` line — rendered as `2 · [3 1] = [6 2]`. Simple inline math
+  with no `\\` (`$\vec{v}$`, `$(x,y)$`) renders fine. Root cause: in
+  `extension/renderer.js`, `renderMarkdown()` runs `marked.parse()` on the raw
+  markdown (including the `$$...$$` block) *before* `renderMathInElement()`
+  ever sees it. Markdown's own backslash-escape handling collapses the `\\`
+  row-separator inside the math block down to a single `\`, which breaks the
+  LaTeX row syntax by the time KaTeX's auto-render walks the DOM — and
+  `throwOnError: false` means it fails silently instead of showing an error.
+  Fix should mirror the existing `SCREENSHOT_MARKER` placeholder-swap pattern
+  already in that file: extract `$$...$$` / `$...$` blocks into placeholders
+  *before* `marked.parse()`, restore the original untouched LaTeX source
+  after, so KaTeX sees pristine `\\` sequences. Affects both engines equally
+  since it's a rendering-layer bug, not a generation-layer one.
 
 ## Reliability
 

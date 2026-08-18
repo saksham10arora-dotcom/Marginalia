@@ -5,7 +5,7 @@
 ![Engines](https://img.shields.io/badge/engines-Haiku_%7C_Gemini-8A2BE2?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-orange?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Status](https://img.shields.io/badge/status-private-lightgrey?style=flat-square)
+![Status](https://img.shields.io/badge/status-public-brightgreen?style=flat-square)
 
 > **Live lecture notes from YouTube, written straight into your Obsidian vault while you watch.** Press Start, keep watching, and a real note builds itself in a side panel: timestamped sections, math rendered properly, board content folded into the text when it adds something the transcript alone would miss.
 
@@ -135,6 +135,12 @@ No cloud servers beyond whichever model API you've configured (Anthropic via you
 ![Marginalia panel open on a Statistics 110 lecture, generating notes with rendered math](assets/preview.png)
 
 > A real session: Harvard's Stat 110 (Probability), notes generating live in the side panel as the lecture plays, section headers, KaTeX-rendered math, a worked example, all written straight into the vault note in the background.
+
+### Opening a past note from the in-panel file browser
+
+![Demo: opening the file browser and viewing a previously-generated note with rendered math](assets/demo.gif)
+
+> A real, previously-generated note for this exact video (3Blue1Brown's *Essence of Linear Algebra*, Chapter 1), opened from the panel's file browser: TL;DR, timestamped sections, and inline math rendering.
 
 ---
 
@@ -401,7 +407,7 @@ Full backlog lives in [`ISSUES.md`](ISSUES.md).
 
 ### v1.0.0: Public
 - [ ] Everything above cleared
-- [ ] Real screenshots and a short demo GIF in this README
+- [x] Real screenshots and a short demo GIF in this README
 
 ---
 
