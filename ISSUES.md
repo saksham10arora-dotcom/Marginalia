@@ -13,15 +13,10 @@ some point, but no rush now that the repo's public.
   parser, not a standard `.env` in the project root. Added `keys.env.example`
   at the repo root so the format is at least documented; still not a real
   `.env` a public user would expect by convention.
-- **Self-inflicted migration gotcha from the `VAULT_PATH` fix above**: the
-  sidecar process already running on this machine was started *before* that
-  fix landed, so it's still serving the old hardcoded
-  `/Users/sakshamarora/Desktop/obs-raw/obs/notesyt` path from whatever
-  `config.py` looked like at process start. The next time it's restarted,
-  it'll silently default to `~/MarginaliaNotes` instead — which is empty —
-  unless `MARGINALIA_VAULT_PATH` is set first. Set it in the shell profile,
-  not just exported ad hoc per session, or the real vault will look "empty"
-  after every sidecar restart.
+- ~~Self-inflicted migration gotcha from the `VAULT_PATH` fix above~~ — done.
+  `MARGINALIA_VAULT_PATH` is now exported permanently in `~/.zshrc`, and the
+  sidecar has been restarted under it — confirmed serving the real 18-doc
+  vault, not an empty `~/MarginaliaNotes`.
 - ~~README is stale~~ — done. Full rewrite covering the Gemini engine +
   `MARGINALIA_ENGINE` toggle, frame capture, multi-key rotation, the
   finalize-on-stop regeneration step, and the action bar, plus accurate
@@ -33,23 +28,18 @@ some point, but no rush now that the repo's public.
 
 ## Known bugs
 
-- **Multi-row LaTeX (`\begin{bmatrix}...\end{bmatrix}`, `pmatrix`, `cases`, etc.)
-  renders as flattened plain text instead of a real stacked matrix.** Found
-  while recording the demo GIF for this README (2026-08-19), on the "Vectors"
-  note's `2 \cdot \begin{bmatrix} 3 \\ 1 \end{bmatrix} = \begin{bmatrix} 6 \\ 2
-  \end{bmatrix}` line — rendered as `2 · [3 1] = [6 2]`. Simple inline math
-  with no `\\` (`$\vec{v}$`, `$(x,y)$`) renders fine. Root cause: in
-  `extension/renderer.js`, `renderMarkdown()` runs `marked.parse()` on the raw
-  markdown (including the `$$...$$` block) *before* `renderMathInElement()`
-  ever sees it. Markdown's own backslash-escape handling collapses the `\\`
-  row-separator inside the math block down to a single `\`, which breaks the
-  LaTeX row syntax by the time KaTeX's auto-render walks the DOM — and
-  `throwOnError: false` means it fails silently instead of showing an error.
-  Fix should mirror the existing `SCREENSHOT_MARKER` placeholder-swap pattern
-  already in that file: extract `$$...$$` / `$...$` blocks into placeholders
-  *before* `marked.parse()`, restore the original untouched LaTeX source
-  after, so KaTeX sees pristine `\\` sequences. Affects both engines equally
-  since it's a rendering-layer bug, not a generation-layer one.
+- ~~Multi-row LaTeX (`\begin{bmatrix}...\end{bmatrix}`, `pmatrix`, `cases`,
+  etc.) renders as flattened plain text instead of a real stacked matrix~~
+  — done. `renderMarkdown()` now extracts `$$...$$` / `$...$` blocks into
+  `\x00MATH<n>\x00` placeholders *before* `marked.parse()` touches them
+  (escaping each block's own `<`/`>` at extraction time, same trust model as
+  the rest of the function), then restores the pristine, unmangled LaTeX
+  afterward — mirrors the existing `SCREENSHOT_MARKER` placeholder pattern.
+  Two regression tests added (`renderer.test.js`); confirmed live in the
+  actual panel on the same "Vectors" note that surfaced the bug — the matrix
+  now renders as a real stacked bracket, not flattened text. Affected both
+  engines equally, since it was a rendering-layer bug, not a
+  generation-layer one.
 
 ## Reliability
 

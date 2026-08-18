@@ -22,6 +22,24 @@ describe('renderMarkdown', () => {
     expect(html).toContain('$(1+r)^n$');
   });
 
+  it('preserves double-backslash row separators inside a display math block', () => {
+    // Regression test: marked's own backslash-escape handling used to collapse
+    // \\ down to a single \ before KaTeX ever saw it, silently breaking every
+    // multi-row LaTeX environment (bmatrix, pmatrix, cases, ...) -- e.g.
+    // \begin{bmatrix} 2 \\ 1 \end{bmatrix} rendered as flattened "[2 1]" text
+    // instead of a real stacked matrix, with no visible error anywhere.
+    const html = renderMarkdown(
+      '$$2 \\cdot \\begin{bmatrix} 3 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 6 \\\\ 2 \\end{bmatrix}$$'
+    );
+    expect(html).toContain('\\begin{bmatrix} 3 \\\\ 1 \\end{bmatrix}');
+    expect(html).toContain('\\begin{bmatrix} 6 \\\\ 2 \\end{bmatrix}');
+  });
+
+  it('escapes HTML inside a math block instead of letting it smuggle a script tag', () => {
+    const html = renderMarkdown('$$\\text{<script>alert(1)</script>}$$');
+    expect(html).not.toContain('<script>');
+  });
+
   it('escapes raw HTML in the source to prevent injection from model output', () => {
     const html = renderMarkdown('Some text <script>alert(1)</script> more text.');
     expect(html).not.toContain('<script>');
