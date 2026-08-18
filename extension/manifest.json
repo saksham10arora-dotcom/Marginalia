@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Marginalia",
+  "version": "0.1.0",
+  "description": "Live lecture notes from YouTube transcripts, written straight to your Obsidian vault. Optionally includes relevant video screenshots.",
+  "permissions": [],
+  "host_permissions": ["*://*.youtube.com/*", "http://localhost:8765/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle Marginalia panel",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["vendor/marked.min.js", "vendor/katex.min.js", "vendor/auto-render.min.js", "content-script.js"],
+      "css": ["panel.css", "vendor/katex.min.css"],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["panel.js", "transcript.js", "renderer.js", "vendor/marked.min.js", "vendor/katex.min.js", "vendor/auto-render.min.js", "vendor/fonts/*"],
+      "matches": ["*://*.youtube.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
