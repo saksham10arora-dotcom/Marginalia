@@ -1,25 +1,6 @@
 from sidecar import config
 
 
-def test_load_gemini_api_key_parses_keys_file(tmp_path, monkeypatch):
-    keys_file = tmp_path / "keys.env"
-    keys_file.write_text('OTHER_KEY="x"\nGEMINI_API_KEY="abc-123"\n')
-    monkeypatch.setattr(config, "KEYS_PATH", keys_file)
-    assert config.load_gemini_api_key() == "abc-123"
-
-
-def test_load_gemini_api_key_skips_commented_line(tmp_path, monkeypatch):
-    keys_file = tmp_path / "keys.env"
-    keys_file.write_text('# GEMINI_API_KEY="commented-out"\nGEMINI_API_KEY=real-key\n')
-    monkeypatch.setattr(config, "KEYS_PATH", keys_file)
-    assert config.load_gemini_api_key() == "real-key"
-
-
-def test_load_gemini_api_key_returns_none_when_missing(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "KEYS_PATH", tmp_path / "does-not-exist.env")
-    assert config.load_gemini_api_key() is None
-
-
 def test_load_gemini_api_keys_returns_single_key_when_unnumbered_only(tmp_path, monkeypatch):
     keys_file = tmp_path / "keys.env"
     keys_file.write_text('GEMINI_API_KEY="only-one"\n')

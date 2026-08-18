@@ -5,17 +5,18 @@ Issue when this goes public.
 
 ## Portability (blocks public use)
 
-- **`VAULT_PATH` is hardcoded** to an absolute path on this machine
-  (`sidecar/config.py`). Anyone else running this needs to edit source to
-  point it at their own vault — should be an env var with a sane default,
-  documented in the README.
-- **`keys.env` location is hardcoded** to `~/.config/keys.env` with a bespoke
-  regex parser, not a standard `.env` in the project root. Works fine for
-  personal use; a public user would expect `.env` + a documented format.
+- ~~`VAULT_PATH` is hardcoded to an absolute path on this machine~~ — done.
+  Now `MARGINALIA_VAULT_PATH` env var, defaults to `~/MarginaliaNotes`,
+  auto-created on import so a missing folder can no longer crash the sidecar
+  at startup (previously `StaticFiles` mount raised immediately).
+- **`keys.env` location is still `~/.config/keys.env`** with a bespoke regex
+  parser, not a standard `.env` in the project root. Added `keys.env.example`
+  at the repo root so the format is at least documented; still not a real
+  `.env` a public user would expect by convention.
 - ~~README is stale~~ — done. Full rewrite covering the Gemini engine +
   `MARGINALIA_ENGINE` toggle, frame capture, multi-key rotation, the
   finalize-on-stop regeneration step, and the action bar, plus accurate
-  test counts (102+32).
+  test counts (100+34).
 - ~~Project renamed from "HoverNotes Clone" to Marginalia, but the local
   folder name and GitHub repo URL still don't match~~ — done. GitHub repo is
   now `Marginalia`, remote updated, git history squashed to drop every old
@@ -44,13 +45,38 @@ Issue when this goes public.
 
 ## Test coverage gaps
 
-- **No JS tests for the action bar** (`extension/panel.js`'s copy/download/
-  open-in-obsidian/browse-files buttons, added this session). Only the pure
-  logic modules (`transcript.js`, `renderer.js`) have unit tests; DOM-level
-  interaction is manually verified in-browser only.
-- **No CI.** Tests exist (102 backend + 28 JS) but nothing runs them
+- **No tests at all for `extension/panel.js`** (473 lines) — not just the
+  action bar. Only the pure logic modules (`transcript.js`, `renderer.js`)
+  have unit tests; everything stateful/DOM-touching in `panel.js` (file
+  browser view state, chunk-send error handling, action bar wiring) is
+  manually verified in-browser only. At minimum, the pure helpers
+  (`resolveImagePaths`, `escapeHtml`, `documentDomain`, `buildObsidianUri`)
+  don't need a DOM and could be extracted and unit-tested.
+- ~~No test covering the haiku engine's failure path~~ — done. Added
+  `test_note_chunk_haiku_engine_502s_when_claude_cli_missing`, since a
+  missing `claude` CLI is exactly what a fresh public clone hits first
+  (haiku is the default engine).
+- **No CI.** Tests exist (100 backend + 34 JS) but nothing runs them
   automatically on push/PR. Worth a basic GitHub Actions workflow before
   going public, so contributors' PRs get checked.
+
+## Code quality (found in the pre-public-launch audit, not yet fixed)
+
+- **Duplicated style-instruction prompt text** across `haiku_client.py`,
+  `gemini_client.py`, and `finalize.py` (same paragraph copy-pasted 3x).
+  Should be one shared constant so a style-contract change doesn't need
+  updating in lockstep in three places.
+- **`panel.js` module state doesn't reset on panel close.** `state.viewingFilename`
+  / `state.viewingSource` / `savedBodyHtml` survive a close+reopen, so
+  `currentFocus()` can briefly reflect the previous session's saved-file view.
+  Not a crash, just confusable — worth resetting explicitly in the `hn-close`
+  handler.
+- **No Windows support documented.** `source venv/bin/activate` appears 3x in
+  the README with no `venv\Scripts\activate` equivalent or caveat.
+- **No stated Python version floor.** Code uses `str | None` union syntax
+  (3.10+ only) with nothing in the README or a `.python-version` file saying
+  so — fails with a confusing `TypeError` on older Pythons instead of a clear
+  version error.
 
 ## Product gaps (not urgent, just noted)
 

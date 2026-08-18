@@ -4,6 +4,7 @@
 ![Manifest](https://img.shields.io/badge/manifest-V3-4285F4?style=flat-square)
 ![Engines](https://img.shields.io/badge/engines-Haiku_%7C_Gemini-8A2BE2?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-orange?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Status](https://img.shields.io/badge/status-private-lightgrey?style=flat-square)
 
 > **Live lecture notes from YouTube, written straight into your Obsidian vault while you watch.** Press Start, keep watching, and a real note builds itself in a side panel: timestamped sections, math rendered properly, board content folded into the text when it adds something the transcript alone would miss.
@@ -26,17 +27,19 @@
 1. [The Problem](#-the-problem)
 2. [The Solution](#-the-solution)
 3. [Features](#-features)
-4. [Architecture](#-architecture)
-5. [Frame Selection Pipeline](#-frame-selection-pipeline)
-6. [Installation](#-installation)
-7. [How to Use](#-how-to-use)
-8. [Setting Up the Gemini Engine](#-setting-up-the-gemini-engine-optional)
-9. [File Structure](#-file-structure)
-10. [Testing](#-testing)
-11. [Security Notes](#-security-notes)
-12. [Roadmap](#-roadmap)
-13. [FAQ](#-faq)
-14. [Why I Built This](#-why-i-built-this)
+4. [Preview](#-preview)
+5. [Architecture](#-architecture)
+6. [Frame Selection Pipeline](#-frame-selection-pipeline)
+7. [Installation](#-installation)
+8. [How to Use](#-how-to-use)
+9. [Setting Up the Gemini Engine](#-setting-up-the-gemini-engine-optional)
+10. [File Structure](#-file-structure)
+11. [Testing](#-testing)
+12. [Security Notes](#-security-notes)
+13. [Roadmap](#-roadmap)
+14. [FAQ](#-faq)
+15. [Why I Built This](#-why-i-built-this)
+16. [License](#-license)
 
 ---
 
@@ -122,6 +125,16 @@ No cloud servers beyond whichever model API you've configured (Anthropic via you
 | ⬇️ Download the note as `.md` | ✅ Live |
 | 🕐 Browse all notes | ✅ Live |
 | 🔗 Open the note directly in Obsidian (`obsidian://open`) | ✅ Live |
+
+---
+
+## 🖼️ Preview
+
+### The panel, live, mid-lecture
+
+![Marginalia panel open on a Statistics 110 lecture, generating notes with rendered math](assets/preview.png)
+
+> A real session: Harvard's Stat 110 (Probability), notes generating live in the side panel as the lecture plays, section headers, KaTeX-rendered math, a worked example, all written straight into the vault note in the background.
 
 ---
 
@@ -218,6 +231,10 @@ Why download the clip instead of handing `ffmpeg` a raw stream URL directly? Con
 
 Since this is a personal, unpublished project, it runs from source in **Developer Mode**.
 
+**Prerequisites:** Python 3.10+, Node.js, [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) and `ffmpeg` on your `PATH` (only needed for the optional Gemini engine's frame capture; skip those two if you're sticking with the default Haiku engine). Currently macOS/Linux only; Windows isn't tested (see [ISSUES.md](ISSUES.md)).
+
+**No Claude Pro/Max?** The default engine below needs an existing `claude` CLI login. If you don't have one, skip straight to [Setting Up the Gemini Engine](#-setting-up-the-gemini-engine-optional) instead: free API key, no CLI required.
+
 ### Step 1: Confirm the Haiku engine works
 
 Default engine, no extra setup. Needs the `claude` CLI already installed and logged into a Claude Pro/Max account.
@@ -235,9 +252,13 @@ pip install -r sidecar/requirements.txt
 npm install
 ```
 
-### Step 3: Point it at your own vault
+### Step 3: Point it at your own vault (optional)
 
-Edit `VAULT_PATH` in `sidecar/config.py` (hardcoded right now, see [Roadmap](#-roadmap)).
+Defaults to `~/MarginaliaNotes`, created automatically on first run. To point it at an existing [Obsidian](https://obsidian.md) vault instead:
+
+```bash
+export MARGINALIA_VAULT_PATH=/path/to/your/vault
+```
 
 ### Step 4: Start the sidecar
 
@@ -282,6 +303,8 @@ Open the source video, copy or download the note, browse past notes, or open the
 Go to [Google AI Studio](https://aistudio.google.com/), sign in, and create a key.
 
 ### Step 2: Add it to `~/.config/keys.env`
+
+Copy [`keys.env.example`](keys.env.example) to `~/.config/keys.env` and fill in your key:
 
 ```bash
 GEMINI_API_KEY=AIzaSy...yourkey...
@@ -369,8 +392,8 @@ Notes are rendered as live HTML (not plain text) to support markdown formatting 
 Full backlog lives in [`ISSUES.md`](ISSUES.md).
 
 ### v0.2.0: Portability
-- [ ] Configurable `VAULT_PATH` (env var, sane default) instead of hardcoded
-- [ ] Standard `.env` for the Gemini keys instead of the bespoke `~/.config/keys.env` parser
+- [x] Configurable `VAULT_PATH` (env var, sane default) instead of hardcoded
+- [ ] Standard `.env` for the Gemini keys instead of the bespoke `~/.config/keys.env` parser (a documented [`keys.env.example`](keys.env.example) exists in the meantime)
 
 ### v0.3.0: Infrastructure
 - [ ] Basic CI (GitHub Actions) running both test suites on every push
@@ -409,6 +432,12 @@ It went through a few real iterations, not a one-shot build:
 - Tried scraping YouTube's own transcript panel DOM: brittle, broke whenever YouTube changed a class name. Switched to `youtube_transcript_api` server-side instead.
 - Added the Gemini engine because some of what's worth noting is written on the board and never said out loud. Ran a real side-by-side experiment (live chunk-by-chunk vs. whole-video batch) to check whether frame capture actually helped, or just added noise. It helped, on the same chunk-blindness axis that turned out to matter more than which model was writing.
 - Rebuilt the finalize step around that finding: instead of tuning live per-chunk notes forever, the whole note gets regenerated with full-video context the moment you hit Stop.
+
+---
+
+## 📄 License
+
+MIT License, see [LICENSE](LICENSE) for details.
 
 ---
 

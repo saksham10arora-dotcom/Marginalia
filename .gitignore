@@ -4,3 +4,8 @@ __pycache__/
 .pytest_cache/
 node_modules/
 .superpowers/
+.DS_Store
+.env
+.env.local
+.vscode/
+.idea/

@@ -27,7 +27,7 @@ def ensure_unique_filename(vault_path: Path, filename: str) -> str:
         counter += 1
 
 
-BASE_TAGS = ["hover-notes", "youtube"]
+BASE_TAGS = ["marginalia", "youtube"]
 
 
 def build_frontmatter(meta: dict) -> str:

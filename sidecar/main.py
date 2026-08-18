@@ -69,6 +69,7 @@ def transcript(video_id: str):
     try:
         cues = fetch_transcript(video_id)
     except Exception as e:
+        logger.exception("Transcript fetch failed for video_id=%s", video_id)
         raise HTTPException(status_code=404, detail=f"No transcript available: {e}")
     return {"cues": cues}
 
@@ -164,7 +165,8 @@ def note_chunk(req: NoteChunkRequest, vault_path: Path = Depends(get_vault_path)
                 end_ts=req.end_ts,
                 style_anchors=style_anchors,
             )
-    except (RuntimeError, subprocess.TimeoutExpired, httpx.HTTPError) as e:
+    except (RuntimeError, subprocess.TimeoutExpired, httpx.HTTPError, FileNotFoundError, ValueError) as e:
+        logger.exception("note-chunk generation failed (engine=%s)", NOTE_ENGINE)
         raise HTTPException(status_code=502, detail=str(e))
 
     existing_content = note_path.read_text()
@@ -217,6 +219,7 @@ def finalize_note(req: FinalizeNoteRequest, vault_path: Path = Depends(get_vault
         video_id = extract_video_id(video_url)
         cues = fetch_transcript(video_id)
     except Exception as e:
+        logger.exception("Transcript refetch failed during finalize for video_url=%s", video_url)
         raise HTTPException(status_code=502, detail=f"Could not refetch transcript: {e}")
     transcript_text = " ".join(c["text"] for c in cues)
 
@@ -237,7 +240,8 @@ def finalize_note(req: FinalizeNoteRequest, vault_path: Path = Depends(get_vault
 
     try:
         body = call_with_key_rotation(call_regenerate, api_keys, prompt, frames)
-    except (RuntimeError, httpx.HTTPError) as e:
+    except (RuntimeError, httpx.HTTPError, ValueError) as e:
+        logger.exception("finalize-note generation failed")
         raise HTTPException(status_code=502, detail=str(e))
 
     fm_end = existing_content.index("\n---", 4) + len("\n---\n")

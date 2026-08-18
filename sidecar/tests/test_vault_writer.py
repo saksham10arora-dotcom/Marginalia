@@ -60,7 +60,7 @@ def test_build_frontmatter_uses_provided_engine_over_default():
 
 def test_build_frontmatter_always_includes_base_tags_plus_extras():
     fm = build_frontmatter(SAMPLE_META)
-    assert "- hover-notes" in fm
+    assert "- marginalia" in fm
     assert "- youtube" in fm
     assert "- mit-18642" in fm
     assert "- quant" in fm
@@ -69,7 +69,7 @@ def test_build_frontmatter_always_includes_base_tags_plus_extras():
 def test_build_frontmatter_defaults_tags_to_empty_list():
     meta = {**SAMPLE_META, "tags": []}
     fm = build_frontmatter(meta)
-    assert "- hover-notes" in fm
+    assert "- marginalia" in fm
     assert "- youtube" in fm
 
 

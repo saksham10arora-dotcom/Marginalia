@@ -2,7 +2,12 @@ import os
 import re
 from pathlib import Path
 
-VAULT_PATH = Path("/Users/sakshamarora/Desktop/obs-raw/obs/notesyt")
+# Defaults to ~/MarginaliaNotes so a fresh clone has somewhere to write;
+# override with MARGINALIA_VAULT_PATH to point at an existing Obsidian vault.
+# Created on import if it doesn't exist yet -- main.py mounts it as a static
+# file directory at startup, which raises immediately if the folder is missing.
+VAULT_PATH = Path(os.environ.get("MARGINALIA_VAULT_PATH", str(Path.home() / "MarginaliaNotes")))
+VAULT_PATH.mkdir(parents=True, exist_ok=True)
 
 # "gemini" (transcript + candidate video frames) or "haiku" (transcript only,
 # via the local `claude` CLI). Static config toggle, not a runtime fallback.
@@ -25,16 +30,6 @@ ENGINE_LABELS = {
 }
 
 KEYS_PATH = Path.home() / ".config" / "keys.env"
-
-
-def load_gemini_api_key() -> str | None:
-    if not KEYS_PATH.exists():
-        return None
-    for line in KEYS_PATH.read_text().splitlines():
-        match = re.match(r'^\s*GEMINI_API_KEY\s*=\s*"?([^"\n]+)"?', line)
-        if match:
-            return match.group(1).strip()
-    return None
 
 
 _GEMINI_KEY_RE = re.compile(r'^\s*GEMINI_API_KEY(?:_(\d+))?\s*=\s*"?([^"\n]+)"?')

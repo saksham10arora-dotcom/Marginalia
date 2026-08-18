@@ -138,6 +138,31 @@ def test_note_chunk_creates_new_note_on_first_chunk(mock_call_haiku, tmp_path, m
     assert response.json()["filename"] == "test-lecture.md"
 
 
+@patch("sidecar.main.call_haiku", side_effect=FileNotFoundError("claude CLI not found on PATH"))
+def test_note_chunk_haiku_engine_502s_when_claude_cli_missing(mock_call_haiku, tmp_path, monkeypatch):
+    """A fresh clone without the `claude` CLI installed hits this on its very
+    first request, since haiku is the default engine -- must degrade to a
+    clean 502, not an unhandled 500 with a raw traceback."""
+    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+
+    response = client.post("/note-chunk", json={
+        "video_id": "abc123",
+        "video_title": "Test Lecture",
+        "video_url": "https://youtube.com/watch?v=abc123",
+        "author": "Test Author",
+        "duration_sec": 600,
+        "transcript_chunk": "vectors are ordered lists of numbers",
+        "start_ts": "00:00:00",
+        "end_ts": "00:01:00",
+        "is_first_chunk": True,
+    })
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 502
+    assert "claude CLI not found on PATH" in response.json()["detail"]
+
+
 @patch("sidecar.main.call_haiku")
 def test_note_chunk_appends_to_existing_note_on_later_chunk(mock_call_haiku, tmp_path, monkeypatch):
     monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
