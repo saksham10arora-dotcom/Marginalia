@@ -13,6 +13,15 @@ some point, but no rush now that the repo's public.
   parser, not a standard `.env` in the project root. Added `keys.env.example`
   at the repo root so the format is at least documented; still not a real
   `.env` a public user would expect by convention.
+- **Self-inflicted migration gotcha from the `VAULT_PATH` fix above**: the
+  sidecar process already running on this machine was started *before* that
+  fix landed, so it's still serving the old hardcoded
+  `/Users/sakshamarora/Desktop/obs-raw/obs/notesyt` path from whatever
+  `config.py` looked like at process start. The next time it's restarted,
+  it'll silently default to `~/MarginaliaNotes` instead — which is empty —
+  unless `MARGINALIA_VAULT_PATH` is set first. Set it in the shell profile,
+  not just exported ad hoc per session, or the real vault will look "empty"
+  after every sidecar restart.
 - ~~README is stale~~ — done. Full rewrite covering the Gemini engine +
   `MARGINALIA_ENGINE` toggle, frame capture, multi-key rotation, the
   finalize-on-stop regeneration step, and the action bar, plus accurate
@@ -97,6 +106,92 @@ some point, but no rush now that the repo's public.
   (3.10+ only) with nothing in the README or a `.python-version` file saying
   so — fails with a confusing `TypeError` on older Pythons instead of a clear
   version error.
+- **`assets/preview.png` (1.7MB) + `assets/demo.gif` (2.2MB) are committed
+  as regular git blobs**, not Git LFS. Fine at this size, but every future
+  clone pays that ~4MB forever since it's baked into history now (squashed
+  or not) — worth moving to LFS before adding more/larger media.
+
+## Future scope (explicitly out of scope for now — not a v1.0/v1.1 blocker)
+
+The long-term vision: every browser, every AI provider, every OS, every
+lecture platform — not just YouTube on Chrome with Haiku or Gemini. None of
+this is started. Recording it now so the direction is explicit and the
+current architecture's real constraints (below) don't get rediscovered from
+scratch later.
+
+### Every browser (currently Chrome/Chromium only)
+
+- The extension is 100% `chrome.*` APIs (`chrome.runtime`, `chrome.action`,
+  `chrome.storage` if/when used, `chrome.tabs`) with no browser-abstraction
+  layer. Edge/Brave/Arc/Opera are Chromium-based and should mostly work
+  unmodified since they implement the same `chrome.*` surface — but this has
+  never actually been tested on any of them.
+- **Firefox** needs either the `browser.*` namespace directly or the
+  `webextension-polyfill` shim, plus Firefox's own manifest quirks
+  (`browser_specific_settings`, background page vs. service worker
+  differences under MV3). Real work, not a toggle.
+- **Safari** is the hard one: Safari Web Extensions require converting the
+  extension via Apple's `safari-web-extension-converter` into an actual Xcode
+  project, and distribution outside the Mac App Store is limited. This is
+  the single biggest lift in the "every browser" goal.
+- **Mobile browsers** (Chrome/Firefox on Android, Safari on iOS) are a
+  separate problem entirely — most don't support extensions in a way that
+  could inject this kind of panel at all.
+
+### Every AI provider (currently Haiku via local CLI + Gemini via direct API)
+
+- `haiku_client.py` (shells out to the local `claude` CLI) and
+  `gemini_client.py` (direct multimodal `httpx` POST) are fundamentally
+  different plumbing today, picked via one static `NOTE_ENGINE` env var in
+  `sidecar/config.py`. There's no shared `Engine` interface — adding a
+  provider currently means writing a whole new client module and another
+  `if NOTE_ENGINE == "..."` branch in `main.py`, not registering a plugin.
+- Real fix, before any new provider gets added: define one interface (e.g.
+  `generate_section(transcript, style_anchors, frames) -> str`) that every
+  engine implements, and make `NOTE_ENGINE` select from a provider registry
+  instead of a hardcoded branch.
+- **OpenRouter, Fireworks, Cerebras** are all OpenAI-compatible chat-completion
+  APIs — these three are genuinely the easy additions once the interface
+  above exists, likely sharing one generic "OpenAI-compatible" client with a
+  different `base_url`/model per provider, not three separate client files.
+- **Codex**: worth double-checking intent here before building anything — OpenAI's
+  Codex/coding models aren't really shaped for lecture-note generation from a
+  transcript. If the actual goal is "let people plug in whatever coding
+  assistant CLI they already pay for, the way Haiku uses the `claude` CLI,"
+  that's a different (and reasonable) integration than "add Codex as a
+  chat-completion provider" — worth clarifying which one before implementing.
+- **Vision isn't universal.** Only the Gemini engine handles frames today;
+  Haiku is transcript-only by design (see `config.py`'s comment on why). Any
+  new provider needs an explicit capability flag (`supports_vision: bool`),
+  not an assumption that every engine can do both modes — otherwise a
+  text-only provider silently gets asked for something it can't do.
+
+### Every OS (currently macOS/Linux, informally)
+
+- Already tracked above (no Windows testing, `venv/bin/activate` throughout
+  the README). Restating here as part of the bigger picture: real
+  cross-platform support means CI running the test suite on Windows/macOS/
+  Linux, not just "probably works since it's mostly pathlib."
+
+### Beyond YouTube: local files, Coursera, Udemy, etc.
+
+- **Local video files**: no path for this exists today at all.
+  `transcript_fetcher.py` is built entirely around `youtube_transcript_api`
+  — a local `.mp4` has no captions API to call. This needs a real
+  speech-to-text pipeline (Whisper or similar) as a new transcript source,
+  not a config change.
+- **Udemy / Coursera / other paid platforms**: fundamentally different from
+  YouTube. These are paywalled and often DRM'd; scraping a transcript
+  requires a logged-in session (cookies/auth passed from the extension to
+  the sidecar) and per-platform DOM scraping since each site's caption UI
+  (where one exists at all — many Udemy courses ship with no captions) is
+  different. Also a materially different legal/ToS risk profile than reading
+  a public YouTube video's own public transcript API — worth thinking through
+  before scraping paid course content, not just an engineering task.
+- Each new platform is a new `content_scripts` match pattern in
+  `manifest.json` plus real site-specific injection/scraping code — this
+  scales linearly with the number of platforms, there's no generic "any
+  video site" shortcut.
 
 ## Product gaps (not urgent, just noted)
 
