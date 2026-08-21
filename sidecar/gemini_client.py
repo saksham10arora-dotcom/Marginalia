@@ -4,6 +4,12 @@ import time
 import httpx
 
 from sidecar.frame_extractor import seconds_to_timestamp
+from sidecar.prompts import (
+    chunk_output_rules,
+    screenshot_rules,
+    style_block,
+    video_context_block,
+)
 
 GEMINI_MODEL = "gemini-3.5-flash"
 GEMINI_TIMEOUT_SEC = 60
@@ -15,41 +21,14 @@ RETRY_BACKOFF_SEC = 3
 
 
 def _build_prompt(video_title, video_url, start_ts, end_ts, transcript_chunk, style_anchors, frame_timestamps):
-    anchors_block = "\n\n---\n\n".join(style_anchors)
-    frames_block = (
-        "\n".join(f"- {ts}" for ts in frame_timestamps)
-        if frame_timestamps
-        else "(no candidate screenshots for this chunk)"
-    )
-    return f"""You write structured markdown lecture notes from a transcript chunk of a video.
-
-Match this exact style — section headers as `## Title [HH:MM:SS](videoUrl&t=Ns)`, bold-term
-bullets, no filler commentary, only the content actually present in the transcript:
-
-{anchors_block}
-
-You have also been given {len(frame_timestamps)} candidate screenshot(s) taken during this chunk,
-in chronological order, attached after this text at these timestamps:
-
-{frames_block}
-
-For each screenshot, judge whether it shows something a person reading only the transcript would
-miss — a formula, diagram, or worked example written on the board/slide but not fully spoken
-aloud. If yes: write that content into your notes yourself, in your own words, as normal prose or
-math at the relevant point — never a description of the image, never an embedded image. Mark the
-exact spot with an inline HTML comment `<!-- screenshot: HH:MM:SS -->` using that screenshot's own
-timestamp. If a screenshot is an empty board, has the speaker blocking the content, is
-mid-transition, or just repeats what the transcript already says in words — ignore it completely:
-no mention, no marker, nothing.
-
-Output ONLY the new section(s) in this format. Do not repeat the frontmatter or TL;DR — those are
-handled separately. Do not invent content not present in the transcript or screenshots.
-
-Video: "{video_title}"
-Video URL: {video_url}
-Transcript from {start_ts} to {end_ts}:
-
-{transcript_chunk}"""
+    """Vision engine: style contract + frame-judging rules + the payload, all
+    in one text part (Gemini has no separate system role in this API shape)."""
+    return "\n\n".join([
+        style_block(style_anchors),
+        screenshot_rules(frame_timestamps, scope="this chunk"),
+        chunk_output_rules(with_screenshots=True),
+        video_context_block(video_title, video_url, start_ts, end_ts, transcript_chunk),
+    ])
 
 
 def frames_to_parts(frames: list[tuple[float, bytes]]) -> list[dict]:

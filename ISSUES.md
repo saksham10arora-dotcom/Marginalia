@@ -41,6 +41,34 @@ some point, but no rush now that the repo's public.
   engines equally, since it was a rendering-layer bug, not a
   generation-layer one.
 
+## Known limitations of the new features
+
+- **Auto-linking does nothing until notes have `aliases:`.** Found by running
+  it against the real 18-note vault: zero links fired. The protection logic
+  was correct (code, math and existing links all came through untouched), but
+  real lecture notes are titled things like "Lecture 4: Linear Algebra
+  (cont.); Probability Theory" and nobody writes that phrase in prose, so
+  title-only matching almost never matches. Obsidian's `aliases:` frontmatter
+  field is now read and is the intended mechanism, but that means the feature
+  is opt-in per note rather than automatic. A future version could mine the
+  finalize step's own "Key terms" glossary to propose aliases automatically.
+- **Finalize-on-Stop is still Gemini-only.** `/finalize-note` calls
+  `load_gemini_api_keys()` directly and 502s without one, so a user on
+  `groq`/`ollama`/`haiku` gets working live chunks but no whole-video
+  regeneration. The live path is fully engine-agnostic; finalize was not
+  migrated in the same pass because it has a different prompt shape and its
+  own frame-extraction call. This is the biggest inconsistency in the engine
+  abstraction right now.
+- **Flashcard quality is unvalidated at scale.** Verified working end to end
+  (18 real cards from the vectors note, LaTeX intact), but there's no
+  evaluation of whether the cards are actually *good* study material across
+  different subjects, and no dedupe against cards already exported from the
+  same note.
+- **Vision support is declared, not detected.** `providers.py` hardcodes
+  `supports_vision` per provider based on its default model. Override the
+  model with `MARGINALIA_MODEL` and that flag can silently become wrong in
+  either direction.
+
 ## Reliability
 
 - **Frame capture still depends on YouTube's CDN behaving.** Fixed the
@@ -75,16 +103,16 @@ some point, but no rush now that the repo's public.
   `test_note_chunk_haiku_engine_502s_when_claude_cli_missing`, since a
   missing `claude` CLI is exactly what a fresh public clone hits first
   (haiku is the default engine).
-- **No CI.** Tests exist (100 backend + 34 JS) but nothing runs them
-  automatically on push/PR. Worth a basic GitHub Actions workflow before
-  going public, so contributors' PRs get checked.
+- ~~No CI~~ — done. `.github/workflows/ci.yml` runs both suites on every
+  push and PR across Ubuntu/macOS/Windows and Python 3.10 + 3.13, and
+  uploads a packaged extension zip as a build artifact. 213 tests total
+  (177 backend + 36 JS), fully mocked: no network, no keys, no `claude` CLI.
 
 ## Code quality (found in the pre-public-launch audit, not yet fixed)
 
-- **Duplicated style-instruction prompt text** across `haiku_client.py`,
-  `gemini_client.py`, and `finalize.py` (same paragraph copy-pasted 3x).
-  Should be one shared constant so a style-contract change doesn't need
-  updating in lockstep in three places.
+- ~~Duplicated style-instruction prompt text across three clients~~ — done.
+  Extracted into `sidecar/prompts.py`; every engine now composes the same
+  style contract from one source.
 - **`panel.js` module state doesn't reset on panel close.** `state.viewingFilename`
   / `state.viewingSource` / `savedBodyHtml` survive a close+reopen, so
   `currentFocus()` can briefly reflect the previous session's saved-file view.
@@ -128,33 +156,28 @@ scratch later.
   separate problem entirely — most don't support extensions in a way that
   could inject this kind of panel at all.
 
-### Every AI provider (currently Haiku via local CLI + Gemini via direct API)
+### Every AI provider ~~(currently Haiku via local CLI + Gemini via direct API)~~ — mostly DONE
 
-- `haiku_client.py` (shells out to the local `claude` CLI) and
-  `gemini_client.py` (direct multimodal `httpx` POST) are fundamentally
-  different plumbing today, picked via one static `NOTE_ENGINE` env var in
-  `sidecar/config.py`. There's no shared `Engine` interface — adding a
-  provider currently means writing a whole new client module and another
-  `if NOTE_ENGINE == "..."` branch in `main.py`, not registering a plugin.
-- Real fix, before any new provider gets added: define one interface (e.g.
-  `generate_section(transcript, style_anchors, frames) -> str`) that every
-  engine implements, and make `NOTE_ENGINE` select from a provider registry
-  instead of a hardcoded branch.
-- **OpenRouter, Fireworks, Cerebras** are all OpenAI-compatible chat-completion
-  APIs — these three are genuinely the easy additions once the interface
-  above exists, likely sharing one generic "OpenAI-compatible" client with a
-  different `base_url`/model per provider, not three separate client files.
-- **Codex**: worth double-checking intent here before building anything — OpenAI's
-  Codex/coding models aren't really shaped for lecture-note generation from a
-  transcript. If the actual goal is "let people plug in whatever coding
-  assistant CLI they already pay for, the way Haiku uses the `claude` CLI,"
-  that's a different (and reasonable) integration than "add Codex as a
-  chat-completion provider" — worth clarifying which one before implementing.
-- **Vision isn't universal.** Only the Gemini engine handles frames today;
-  Haiku is transcript-only by design (see `config.py`'s comment on why). Any
-  new provider needs an explicit capability flag (`supports_vision: bool`),
-  not an assumption that every engine can do both modes — otherwise a
-  text-only provider silently gets asked for something it can't do.
+- ~~No shared `Engine` interface; adding a provider meant a new client module
+  plus another `if NOTE_ENGINE == "..."` branch~~ — done. `engine_dispatch.py`
+  now owns engine selection, `providers.py` is a registry, and
+  `openai_compatible.py` is one client for every `/chat/completions` API.
+  Adding a provider is a dict entry.
+- ~~OpenRouter, Fireworks, Cerebras~~ — done, plus Groq, Together, OpenAI,
+  and local Ollama / LM Studio. All share one client and one retry policy.
+  `MARGINALIA_MODEL` overrides the model per provider.
+- ~~Vision isn't universal; new providers need a capability flag~~ — done.
+  `ProviderSpec.supports_vision` gates frame extraction, so text-only engines
+  skip the yt-dlp/ffmpeg cost entirely instead of building images nothing
+  reads. (Caveat above: the flag is declared per provider, not detected.)
+- **Codex still not integrated**, and the ambiguity flagged earlier still
+  stands: if the goal is "plug in whatever coding-assistant CLI you already
+  pay for, the way `haiku` shells out to the `claude` CLI", that is a
+  *subprocess* engine, not a chat-completion provider, and needs its own
+  small client rather than a registry entry. Worth deciding which before
+  building.
+- **Still to do:** per-engine finalize (see the Gemini-only limitation
+  above), and automatic fallback when a provider is down or out of quota.
 
 ### Every OS (currently macOS/Linux, informally)
 
@@ -192,6 +215,7 @@ scratch later.
   (before you hit Stop) still has this limitation. Not planned to fix —
   live is meant to be a rough draft, finalize is the real output — but
   worth being explicit about if a user asks why the live notes look choppy.
-- **No packaging for the Chrome extension.** Must be loaded unpacked via
-  Developer Mode; not published to the Chrome Web Store. Fine for personal
-  use, would need a build/publish step for wider distribution.
+- **Not published to the Chrome Web Store.** `scripts/package-extension.sh`
+  now builds an upload-ready zip (and CI publishes it as an artifact), so the
+  build step exists; what's left is the actual store submission and review,
+  which needs a developer account and a privacy-policy page.

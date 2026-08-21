@@ -577,3 +577,10 @@
 .hn-modal-item button:hover {
   background: #2a2a30;
 }
+
+/* Action-bar button mid-request (flashcard generation takes a few seconds,
+   so the button needs to visibly stop accepting clicks). */
+#marginalia-panel .hn-icon-btn.hn-busy {
+  opacity: 0.5;
+  pointer-events: none;
+}

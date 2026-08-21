@@ -7,8 +7,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from sidecar.config import VAULT_PATH, NOTE_ENGINE, ENGINE_LABELS, load_gemini_api_keys
+from sidecar.config import (
+    VAULT_PATH,
+    NOTE_ENGINE,
+    AUTOLINK,
+    MAX_AUTOLINKS_PER_SECTION,
+    load_gemini_api_keys,
+)
 from sidecar.key_rotation import call_with_key_rotation
+from sidecar.engine_dispatch import (
+    complete as engine_complete,
+    engine_label,
+    engine_supports_vision,
+    generate_section,
+)
+from sidecar.vault_linker import link_note_to_vault
+from sidecar.anki_export import build_flashcard_prompt, cards_to_tsv, parse_flashcards
 from sidecar.vault_writer import (
     create_note,
     append_section,
@@ -18,10 +32,9 @@ from sidecar.vault_writer import (
     parse_frontmatter,
 )
 from sidecar.markdown_assembly import dedupe_section
-from sidecar.haiku_client import call_haiku, load_style_anchors
+from sidecar.haiku_client import load_style_anchors
 from sidecar.transcript_fetcher import fetch_transcript
 from sidecar.frame_extractor import extract_candidate_frames, seconds_to_timestamp
-from sidecar.gemini_client import call_gemini
 from sidecar.finalize import extract_video_id, build_regenerate_prompt, call_regenerate
 
 logger = logging.getLogger(__name__)
@@ -94,23 +107,23 @@ def document_content(filename: str, vault_path: Path = Depends(get_vault_path)):
     return {"content": doc_path.read_text()}
 
 
-def _generate_section_gemini(req: "NoteChunkRequest", style_anchors: list[str]) -> str:
-    api_keys = load_gemini_api_keys()
-    if not api_keys:
-        raise RuntimeError("No GEMINI_API_KEY found in ~/.config/keys.env")
-
+def _generate_section(req: "NoteChunkRequest", style_anchors: list[str]) -> str:
+    """Engine-agnostic. Frames are only extracted when the configured engine
+    can actually look at them -- doing it for a text-only engine spends real
+    seconds per chunk building images nothing will ever read."""
     frames = []
-    try:
-        frames = extract_candidate_frames(req.video_url, req.start_ts, req.end_ts)
-    except Exception as e:
-        # Frame capture is best-effort — a broken yt-dlp/ffmpeg setup or a
-        # transient network hiccup shouldn't block the note from being
-        # written at all, just degrade it to text-only for this chunk.
-        logger.warning("Frame extraction failed for %s, continuing text-only: %s", req.video_url, e)
+    if engine_supports_vision():
+        try:
+            frames = extract_candidate_frames(req.video_url, req.start_ts, req.end_ts)
+        except Exception as e:
+            # Frame capture is best-effort -- a broken yt-dlp/ffmpeg setup or a
+            # transient network hiccup shouldn't block the note from being
+            # written at all, just degrade it to text-only for this chunk.
+            logger.warning(
+                "Frame extraction failed for %s, continuing text-only: %s", req.video_url, e
+            )
 
-    return call_with_key_rotation(
-        call_gemini,
-        api_keys,
+    return generate_section(
         transcript_chunk=req.transcript_chunk,
         video_title=req.video_title,
         video_url=req.video_url,
@@ -119,6 +132,24 @@ def _generate_section_gemini(req: "NoteChunkRequest", style_anchors: list[str]) 
         style_anchors=style_anchors,
         frames=frames,
     )
+
+
+def _autolink(section: str, vault_path: Path, existing_content: str, filename: str | None) -> str:
+    """Best-effort: a linking failure must never cost the user the section
+    itself, which is the expensive part to regenerate."""
+    if not AUTOLINK:
+        return section
+    try:
+        return link_note_to_vault(
+            section,
+            vault_path,
+            exclude_filename=filename,
+            max_links=MAX_AUTOLINKS_PER_SECTION,
+            existing_content=existing_content,
+        )
+    except Exception:
+        logger.exception("Auto-linking failed, writing the section unlinked")
+        return section
 
 
 @app.post("/note-chunk")
@@ -148,23 +179,13 @@ def note_chunk(req: NoteChunkRequest, vault_path: Path = Depends(get_vault_path)
             "source": req.video_url,
             "author": req.author,
             "duration_sec": req.duration_sec,
-            "engine": ENGINE_LABELS.get(NOTE_ENGINE, NOTE_ENGINE),
+            "engine": engine_label(),
             "tags": [],
         })
 
     style_anchors = load_style_anchors(vault_path, count=2)
     try:
-        if NOTE_ENGINE == "gemini":
-            section = _generate_section_gemini(req, style_anchors)
-        else:
-            section = call_haiku(
-                transcript_chunk=req.transcript_chunk,
-                video_title=req.video_title,
-                video_url=req.video_url,
-                start_ts=req.start_ts,
-                end_ts=req.end_ts,
-                style_anchors=style_anchors,
-            )
+        section = _generate_section(req, style_anchors)
     except (RuntimeError, subprocess.TimeoutExpired, httpx.HTTPError, FileNotFoundError, ValueError) as e:
         logger.exception("note-chunk generation failed (engine=%s)", NOTE_ENGINE)
         raise HTTPException(status_code=502, detail=str(e))
@@ -172,6 +193,8 @@ def note_chunk(req: NoteChunkRequest, vault_path: Path = Depends(get_vault_path)
     existing_content = note_path.read_text()
     final_section = dedupe_section(existing_content, section)
     if final_section is not None:
+        rel_name = note_path.relative_to(vault_path).as_posix()
+        final_section = _autolink(final_section, vault_path, existing_content, rel_name)
         append_section(note_path, final_section)
 
     return {
@@ -244,9 +267,57 @@ def finalize_note(req: FinalizeNoteRequest, vault_path: Path = Depends(get_vault
         logger.exception("finalize-note generation failed")
         raise HTTPException(status_code=502, detail=str(e))
 
+    # Finalize replaces the whole body, so the links the live chunks added are
+    # gone with it -- re-link against the vault from scratch, with no
+    # already-linked filter for exactly that reason.
+    body = _autolink(body.strip(), vault_path, "", req.filename)
+
     fm_end = existing_content.index("\n---", 4) + len("\n---\n")
     finalized = existing_content[:fm_end] + f"\n# {video_title}\n\n" + body.strip() + "\n"
 
     note_path.write_text(finalized)
 
     return {"note_path": str(note_path), "content": finalized}
+
+
+class FlashcardRequest(BaseModel):
+    filename: str
+    tags: str = "marginalia"
+
+
+@app.post("/export/flashcards")
+def export_flashcards(req: FlashcardRequest, vault_path: Path = Depends(get_vault_path)):
+    """Turn a finished note into Anki-importable flashcards.
+
+    Returns TSV rather than .apkg deliberately: Anki imports TSV natively, so
+    this needs no deck-building library and cannot break when Anki changes its
+    package format.
+    """
+    note_path = (vault_path / req.filename).resolve()
+    if vault_path.resolve() not in note_path.parents or note_path.suffix != ".md":
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not note_path.is_file():
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    content = note_path.read_text()
+    fm = parse_frontmatter(content) or {}
+    video_title = fm.get("title", note_path.stem)
+
+    try:
+        raw = engine_complete(build_flashcard_prompt(content, video_title))
+    except (RuntimeError, subprocess.TimeoutExpired, httpx.HTTPError, FileNotFoundError, ValueError) as e:
+        logger.exception("Flashcard generation failed (engine=%s)", NOTE_ENGINE)
+        raise HTTPException(status_code=502, detail=str(e))
+
+    cards = parse_flashcards(raw)
+    if not cards:
+        raise HTTPException(
+            status_code=422,
+            detail="The model returned no usable flashcards for this note.",
+        )
+
+    return {
+        "count": len(cards),
+        "tsv": cards_to_tsv(cards, tags=req.tags),
+        "cards": [{"front": c.front, "back": c.back} for c in cards],
+    }

@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-Chrome_Extension-4285F4?style=flat-square)
 ![Manifest](https://img.shields.io/badge/manifest-V3-4285F4?style=flat-square)
-![Engines](https://img.shields.io/badge/engines-Haiku_%7C_Gemini-8A2BE2?style=flat-square)
+![Engines](https://img.shields.io/badge/engines-Haiku_%7C_Gemini_%7C_OpenRouter_%7C_Groq_%7C_local-8A2BE2?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-orange?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Status](https://img.shields.io/badge/status-public-brightgreen?style=flat-square)
@@ -33,13 +33,16 @@
 7. [Installation](#-installation)
 8. [How to Use](#-how-to-use)
 9. [Setting Up the Gemini Engine](#-setting-up-the-gemini-engine-optional)
-10. [File Structure](#-file-structure)
-11. [Testing](#-testing)
-12. [Security Notes](#-security-notes)
-13. [Roadmap](#-roadmap)
-14. [FAQ](#-faq)
-15. [Why I Built This](#-why-i-built-this)
-16. [License](#-license)
+10. [Choosing an Engine](#-choosing-an-engine)
+11. [Flashcards](#-flashcards)
+12. [Vault Auto-Linking](#-vault-auto-linking)
+13. [File Structure](#-file-structure)
+14. [Testing](#-testing)
+15. [Security Notes](#-security-notes)
+16. [Roadmap](#-roadmap)
+17. [FAQ](#-faq)
+18. [Why I Built This](#-why-i-built-this)
+19. [License](#-license)
 
 ---
 
@@ -103,6 +106,9 @@ No cloud servers beyond whichever model API you've configured (Anthropic via you
 |---|---|
 | `haiku` engine, transcript only, your existing Claude Pro/Max login | ✅ Default |
 | `gemini` engine, transcript + candidate video frames | ✅ Optional |
+| Any OpenAI-compatible provider (OpenRouter, Groq, Fireworks, Cerebras, Together, OpenAI) | ✅ Live |
+| Fully local, zero-cost engines (Ollama, LM Studio) | ✅ Live |
+| Vision auto-detection: frames are only captured for engines that can see | ✅ Live |
 | Per-frame usefulness judgment (paraphrase into prose, or silently discard) | ✅ Live |
 | Invisible `<!-- screenshot: HH:MM:SS -->` provenance marker, never a pasted image | ✅ Live |
 | Multi-key rotation across Gemini's 20-calls/day/key free tier | ✅ Live |
@@ -124,7 +130,16 @@ No cloud servers beyond whichever model API you've configured (Anthropic via you
 | 📋 Copy the note as markdown | ✅ Live |
 | ⬇️ Download the note as `.md` | ✅ Live |
 | 🕐 Browse all notes | ✅ Live |
+| 🎴 Export Anki flashcards from the note | ✅ Live |
 | 🔗 Open the note directly in Obsidian (`obsidian://open`) | ✅ Live |
+
+### 🧠 Study Tools
+
+| Feature | Status |
+|---|---|
+| One-click Anki flashcard export (Q/A cards, LaTeX preserved) | ✅ Live |
+| Auto-wikilinking into your existing Obsidian graph | ✅ Live |
+| Obsidian `aliases:` support, so prose mentions link to the right note | ✅ Live |
 
 ---
 
@@ -332,6 +347,113 @@ Gemini's free tier caps at 20 `generateContent` calls/day *per key* for `gemini-
 
 ---
 
+## 🔌 Choosing an Engine
+
+`MARGINALIA_ENGINE` picks who writes the notes. Everything past the first two
+speaks OpenAI's `/chat/completions`, so adding a provider is a registry entry
+in `sidecar/providers.py`, not a new client module.
+
+| Engine | Cost | Vision | Key needed |
+|---|---|---|---|
+| `haiku` *(default)* | Your existing Claude Pro/Max plan | No | None, uses the `claude` CLI |
+| `gemini` | Free tier, 20 calls/day/key | **Yes** | `GEMINI_API_KEY` |
+| `openrouter` | Pay per token | **Yes** | `OPENROUTER_API_KEY` |
+| `groq` | Free tier, very fast | No | `GROQ_API_KEY` |
+| `fireworks` | Pay per token | No | `FIREWORKS_API_KEY` |
+| `cerebras` | Free tier | No | `CEREBRAS_API_KEY` |
+| `together` | Pay per token | No | `TOGETHER_API_KEY` |
+| `openai` | Pay per token | **Yes** | `OPENAI_API_KEY` |
+| `ollama` | **Free, fully local** | No | None |
+| `lmstudio` | **Free, fully local** | No | None |
+
+```bash
+# Fastest free cloud option
+MARGINALIA_ENGINE=groq uvicorn sidecar.main:app --port 8765
+
+# Fully local, nothing leaves your machine
+MARGINALIA_ENGINE=ollama MARGINALIA_MODEL=llama3.2 uvicorn sidecar.main:app --port 8765
+
+# Any specific model on a provider
+MARGINALIA_ENGINE=openrouter MARGINALIA_MODEL=openai/gpt-4o-mini uvicorn sidecar.main:app --port 8765
+```
+
+Frame capture is skipped automatically on text-only engines. It costs real
+seconds per chunk, so there is no point paying it to build images a text-only
+model will never look at.
+
+Every provider gets multi-key rotation for free: add `GROQ_API_KEY_2`,
+`GROQ_API_KEY_3` and so on, and `key_rotation.py` round-robins across them.
+
+---
+
+## 🎴 Flashcards
+
+Notes you never reopen are worth roughly nothing. The 🎴 button in the action
+bar turns the current note into Anki cards in one click.
+
+```bash
+curl -X POST http://localhost:8765/export/flashcards \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"stat110/lec1.md","tags":"stat110"}'
+```
+
+The panel downloads a `.txt` you drag straight into Anki: no plugin, no
+`.apkg` tooling, no import-dialog settings to get right. Real output from the
+3Blue1Brown vectors note:
+
+```
+Q: How does the tip-to-tail method construct the sum of two vectors geometrically?
+A: Place the second vector's tail at the tip of the first; draw the sum from
+   the first vector's tail to the second vector's tip.
+
+Q: How is vector addition performed on two coordinate lists?
+A: Add corresponding components: $\begin{bmatrix} a \\ b \end{bmatrix} +
+   \begin{bmatrix} c \\ d \end{bmatrix} = \begin{bmatrix} a+c \\ b+d \end{bmatrix}$
+```
+
+LaTeX survives intact, so formula cards render properly in Anki instead of
+arriving as flattened text. Works on every engine, including the default one
+that needs no API key.
+
+---
+
+## 🕸️ Vault Auto-Linking
+
+A note that says "eigenvalues" is dead text. `[[Eigenvalues]]` is a real edge
+in your Obsidian graph, and it shows up in that note's backlinks without you
+doing anything. Marginalia adds those edges as it writes.
+
+It refuses to link things that only look like prose: LaTeX, code blocks,
+existing links, headings, and the invisible screenshot markers all come
+through untouched.
+
+**To make this actually fire, add `aliases:` to your notes.** This is not
+optional polish, it is the whole mechanism. Real lecture notes are titled
+things like `"Lecture 4: Linear Algebra (cont.); Probability Theory"`, and
+nobody writes that phrase in prose, so matching on titles alone almost never
+fires. Obsidian's own `aliases:` field is the fix:
+
+```yaml
+---
+title: "Lecture 4: Linear Algebra (cont.); Probability Theory"
+aliases:
+  - linear algebra
+  - probability theory
+---
+```
+
+Now any future note that mentions "linear algebra" links straight to it:
+
+```markdown
+Today we connect this to [[Lecture 4: Linear Algebra (cont.); Probability Theory|linear algebra]].
+```
+
+One edge per destination note, first mention only, capped at 8 per section, so
+notes stay readable instead of turning solid blue. Disable entirely with
+`MARGINALIA_AUTOLINK=0`.
+
+---
+
 ## 📁 File Structure
 
 ```
@@ -348,6 +470,12 @@ marginalia/
 ├── sidecar/
 │   ├── main.py                 ← FastAPI routes
 │   ├── config.py               ← engine toggle, key loading
+│   ├── providers.py           ← OpenAI-compatible provider registry
+│   ├── engine_dispatch.py     ← picks the engine, routes the call
+│   ├── openai_compatible.py   ← one client for every /chat/completions API
+│   ├── prompts.py             ← shared note-writing style contract
+│   ├── vault_linker.py        ← auto-wikilinking into the Obsidian graph
+│   ├── anki_export.py         ← note → Anki flashcards (TSV)
 │   ├── haiku_client.py        ← claude CLI, transcript-only
 │   ├── gemini_client.py       ← Gemini API, transcript + frames
 │   ├── frame_extractor.py     ← yt-dlp download + perceptual-hash sampling
@@ -356,7 +484,10 @@ marginalia/
 │   ├── transcript_fetcher.py  ← youtube_transcript_api
 │   ├── vault_writer.py        ← frontmatter, file I/O, dedupe
 │   └── tests/                  ← pytest suite
-├── ISSUES.md                   ← local backlog, becomes GitHub Issues at go-public
+├── scripts/
+│   └── package-extension.sh   ← builds the Chrome Web Store zip
+├── .github/workflows/ci.yml   ← both suites, 3 OSes, Python 3.10 + 3.13
+├── ISSUES.md                   ← known issues and future scope
 └── README.md
 ```
 
@@ -365,6 +496,12 @@ marginalia/
 | File | Constant | Default | Description |
 |---|---|---|---|
 | `sidecar/config.py` | `NOTE_ENGINE` | `"haiku"` | `MARGINALIA_ENGINE` env var overrides |
+| `sidecar/config.py` | `AUTOLINK` | `True` | `MARGINALIA_AUTOLINK=0` writes plain prose |
+| `sidecar/config.py` | `MAX_AUTOLINKS_PER_SECTION` | `8` | Wikilink cap per generated section |
+| `sidecar/config.py` | `VAULT_PATH` | `~/MarginaliaNotes` | `MARGINALIA_VAULT_PATH` env var overrides |
+| `sidecar/providers.py` | `PROVIDERS` | 8 providers | `MARGINALIA_MODEL` overrides any default model |
+| `sidecar/anki_export.py` | `MAX_CARDS` | `25` | Cap on flashcards per note |
+| `sidecar/vault_linker.py` | `MIN_TITLE_LENGTH` | `4` | Below this, titles are too generic to link |
 | `sidecar/frame_extractor.py` | `interval` | `3.0` sec | How often a candidate frame is sampled |
 | `sidecar/frame_extractor.py` | `hash_threshold` | `5` | Hamming distance a frame must clear vs. the last kept one |
 | `sidecar/frame_extractor.py` | `DOWNLOAD_ATTEMPTS` | `3` | Retries on YouTube CDN 403 |
@@ -376,12 +513,17 @@ marginalia/
 ## 🧪 Testing
 
 ```bash
-# Sidecar
+# Sidecar (177 tests)
 source venv/bin/activate && python -m pytest sidecar/tests/ -v
 
-# Extension pure-logic units
+# Extension pure-logic units (36 tests)
 npm test
+
+# Build the Chrome Web Store zip
+bash scripts/package-extension.sh
 ```
+
+213 tests total, all mocked: no network, no API keys, no `claude` CLI needed. CI runs both suites on Ubuntu, macOS and Windows against Python 3.10 and 3.13.
 
 Everything DOM-level (panel rendering, in-browser interactions) is manually verified in a live browser, not covered by the automated suites above.
 
@@ -399,11 +541,13 @@ Full backlog lives in [`ISSUES.md`](ISSUES.md).
 
 ### v0.2.0: Portability
 - [x] Configurable `VAULT_PATH` (env var, sane default) instead of hardcoded
+- [x] Provider-agnostic engines (OpenRouter, Groq, Fireworks, Cerebras, Together, OpenAI, Ollama, LM Studio)
 - [ ] Standard `.env` for the Gemini keys instead of the bespoke `~/.config/keys.env` parser (a documented [`keys.env.example`](keys.env.example) exists in the meantime)
 
 ### v0.3.0: Infrastructure
-- [ ] Basic CI (GitHub Actions) running both test suites on every push
-- [ ] Chrome Web Store packaging, or at least a signed release archive
+- [x] Basic CI (GitHub Actions) running both test suites on every push
+- [x] Chrome Web Store packaging script (`scripts/package-extension.sh`)
+- [ ] Actually submit to the Chrome Web Store
 
 ### v1.0.0: Public
 - [ ] Everything above cleared

@@ -72,6 +72,41 @@ function openCurrentVideo() {
   if (focus?.source) window.open(focus.source, '_blank');
 }
 
+async function exportFlashcards() {
+  const focus = currentFocus();
+  if (!focus) return;
+  const btn = document.getElementById('hn-action-flashcards');
+  btn?.classList.add('hn-busy');
+  const notice = appendNotice('Generating flashcards…');
+  try {
+    const response = await fetch(`${SIDECAR_URL}/export/flashcards`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: focus.filename }),
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`HTTP ${response.status}${detail ? `: ${detail}` : ''}`);
+    }
+    const { count, tsv } = await response.json();
+    // Anki imports .txt/.tsv directly, so hand the user a file rather than
+    // making them copy text out of a panel into a text editor first.
+    const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${focus.filename.split('/').pop().replace(/\.md$/, '')}-flashcards.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (notice) notice.textContent = `${count} flashcards downloaded — import the .txt into Anki.`;
+  } catch (err) {
+    console.error('[Marginalia] flashcard export failed:', err);
+    if (notice) notice.textContent = `Flashcard export failed: ${err.message}`;
+  } finally {
+    btn?.classList.remove('hn-busy');
+  }
+}
+
 function openCurrentInObsidian() {
   const focus = currentFocus();
   if (focus) window.open(buildObsidianUri(focus.filename), '_blank');
@@ -353,6 +388,7 @@ export function wirePanelButtons() {
   document.getElementById('hn-action-copy')?.addEventListener('click', copyCurrentNote);
   document.getElementById('hn-action-download')?.addEventListener('click', downloadCurrentNote);
   document.getElementById('hn-action-history')?.addEventListener('click', () => openFilesModal());
+  document.getElementById('hn-action-flashcards')?.addEventListener('click', exportFlashcards);
   document.getElementById('hn-action-obsidian')?.addEventListener('click', openCurrentInObsidian);
 }
 

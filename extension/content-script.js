@@ -80,6 +80,9 @@ function injectPanel() {
       <button class="hn-icon-btn" id="hn-action-history" title="Browse all notes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       </button>
+      <button class="hn-icon-btn" id="hn-action-flashcards" title="Export Anki flashcards">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="13" rx="2"/><path d="M7 4h11a2 2 0 0 1 2 2v11"/><path d="M9.5 13h4"/></svg>
+      </button>
       <button class="hn-icon-btn" id="hn-action-obsidian" title="Open in Obsidian">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
       </button>

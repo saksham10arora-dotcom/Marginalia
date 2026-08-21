@@ -2,6 +2,7 @@ from unittest.mock import patch
 import httpx
 from fastapi.testclient import TestClient
 import sidecar.main as main_module
+import sidecar.config as config_module
 from sidecar.main import app, get_vault_path
 
 client = TestClient(app)
@@ -109,9 +110,9 @@ def test_document_content_rejects_non_markdown(tmp_path):
     assert response.status_code == 400
 
 
-@patch("sidecar.main.call_haiku")
+@patch("sidecar.engine_dispatch.call_haiku")
 def test_note_chunk_creates_new_note_on_first_chunk(mock_call_haiku, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     mock_call_haiku.return_value = "## Vectors [00:00:20](url)\n\nVectors are ordered lists."
     app.dependency_overrides[get_vault_path] = lambda: tmp_path
 
@@ -138,12 +139,12 @@ def test_note_chunk_creates_new_note_on_first_chunk(mock_call_haiku, tmp_path, m
     assert response.json()["filename"] == "test-lecture.md"
 
 
-@patch("sidecar.main.call_haiku", side_effect=FileNotFoundError("claude CLI not found on PATH"))
+@patch("sidecar.engine_dispatch.call_haiku", side_effect=FileNotFoundError("claude CLI not found on PATH"))
 def test_note_chunk_haiku_engine_502s_when_claude_cli_missing(mock_call_haiku, tmp_path, monkeypatch):
     """A fresh clone without the `claude` CLI installed hits this on its very
     first request, since haiku is the default engine -- must degrade to a
     clean 502, not an unhandled 500 with a raw traceback."""
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     app.dependency_overrides[get_vault_path] = lambda: tmp_path
 
     response = client.post("/note-chunk", json={
@@ -163,9 +164,9 @@ def test_note_chunk_haiku_engine_502s_when_claude_cli_missing(mock_call_haiku, t
     assert "claude CLI not found on PATH" in response.json()["detail"]
 
 
-@patch("sidecar.main.call_haiku")
+@patch("sidecar.engine_dispatch.call_haiku")
 def test_note_chunk_appends_to_existing_note_on_later_chunk(mock_call_haiku, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     note_path = tmp_path / "test-lecture.md"
     note_path.write_text('---\ntitle: "Test Lecture"\n---\n\n# Test Lecture\n\n## Intro [00:00:00](url)\n\nFirst bit.')
     mock_call_haiku.return_value = "## Eigenvalues [00:05:00](url)\n\nCharacteristic roots."
@@ -190,9 +191,9 @@ def test_note_chunk_appends_to_existing_note_on_later_chunk(mock_call_haiku, tmp
     assert "## Eigenvalues [00:05:00](url)" in content  # new section appended
 
 
-@patch("sidecar.main.call_haiku")
+@patch("sidecar.engine_dispatch.call_haiku")
 def test_note_chunk_skips_duplicate_section(mock_call_haiku, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     note_path = tmp_path / "test-lecture.md"
     note_path.write_text(
         '---\ntitle: "Test Lecture"\n---\n\n# Test Lecture\n\n'
@@ -215,9 +216,9 @@ def test_note_chunk_skips_duplicate_section(mock_call_haiku, tmp_path, monkeypat
     assert content.count("## Vectors") == 1  # not duplicated
 
 
-@patch("sidecar.main.call_haiku")
+@patch("sidecar.engine_dispatch.call_haiku")
 def test_note_chunk_matches_by_url_even_when_title_differs(mock_call_haiku, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     # Existing note has a DIFFERENT title but the SAME source URL as the
     # incoming request. URL matching should find this note (and append to
     # it) instead of creating a new note under a filename derived from the
@@ -246,9 +247,9 @@ def test_note_chunk_matches_by_url_even_when_title_differs(mock_call_haiku, tmp_
     assert "## New Part [00:05:00](url)" in content  # appended to the URL-matched note
 
 
-@patch("sidecar.main.call_haiku")
+@patch("sidecar.engine_dispatch.call_haiku")
 def test_note_chunk_url_match_wins_over_unrelated_title_collision(mock_call_haiku, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
     # Two DIFFERENT documents already exist in the vault:
     #   1. doc_url_match.md -- same source URL as the incoming request, but a
     #      different title (so its filename is NOT what the request's title
@@ -306,8 +307,8 @@ def _note_chunk_payload(**overrides):
     return payload
 
 
-@patch("sidecar.main.load_gemini_api_keys", return_value=["fake-key"])
-@patch("sidecar.main.call_gemini")
+@patch("sidecar.engine_dispatch.load_gemini_api_keys", return_value=["fake-key"])
+@patch("sidecar.engine_dispatch.call_gemini")
 @patch("sidecar.main.extract_candidate_frames")
 def test_note_chunk_gemini_engine_never_writes_frame_images_to_disk(
     mock_extract, mock_call_gemini, mock_key, tmp_path, monkeypatch,
@@ -315,7 +316,7 @@ def test_note_chunk_gemini_engine_never_writes_frame_images_to_disk(
     # Screenshots are paraphrased into prose with an inline timestamp marker
     # (<!-- screenshot: HH:MM:SS -->), matching the batch pipeline's exact
     # convention -- never embedded, so nothing should ever touch disk here.
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "gemini")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "gemini")
     mock_extract.return_value = [
         (20.0, b"\xff\xd8used-frame"),
         (40.0, b"\xff\xd8dropped-frame"),
@@ -336,13 +337,13 @@ def test_note_chunk_gemini_engine_never_writes_frame_images_to_disk(
     assert not (tmp_path / "hover-notes-images").exists()
 
 
-@patch("sidecar.main.load_gemini_api_keys", return_value=["fake-key"])
-@patch("sidecar.main.call_gemini")
+@patch("sidecar.engine_dispatch.load_gemini_api_keys", return_value=["fake-key"])
+@patch("sidecar.engine_dispatch.call_gemini")
 @patch("sidecar.main.extract_candidate_frames", side_effect=RuntimeError("ffmpeg not found"))
 def test_note_chunk_gemini_engine_degrades_to_text_only_on_frame_failure(
     mock_extract, mock_call_gemini, mock_key, tmp_path, monkeypatch,
 ):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "gemini")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "gemini")
     mock_call_gemini.return_value = "## Vectors [00:00:20](url)\n\nText-only notes."
     app.dependency_overrides[get_vault_path] = lambda: tmp_path
 
@@ -354,9 +355,9 @@ def test_note_chunk_gemini_engine_degrades_to_text_only_on_frame_failure(
     assert mock_call_gemini.call_args.kwargs["frames"] == []
 
 
-@patch("sidecar.main.load_gemini_api_keys", return_value=[])
+@patch("sidecar.engine_dispatch.load_gemini_api_keys", return_value=[])
 def test_note_chunk_gemini_engine_502s_without_api_key(mock_key, tmp_path, monkeypatch):
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "gemini")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "gemini")
     app.dependency_overrides[get_vault_path] = lambda: tmp_path
 
     response = client.post("/note-chunk", json=_note_chunk_payload())
@@ -367,7 +368,7 @@ def test_note_chunk_gemini_engine_502s_without_api_key(mock_key, tmp_path, monke
 
 
 @patch("sidecar.main.load_gemini_api_keys", return_value=["fake-key"])
-@patch("sidecar.main.call_gemini", side_effect=httpx.ReadTimeout("The read operation timed out"))
+@patch("sidecar.engine_dispatch.call_gemini", side_effect=httpx.ReadTimeout("The read operation timed out"))
 @patch("sidecar.main.extract_candidate_frames", return_value=[])
 def test_note_chunk_gemini_engine_502s_on_httpx_timeout(
     mock_extract, mock_call_gemini, mock_key, tmp_path, monkeypatch,
@@ -375,7 +376,7 @@ def test_note_chunk_gemini_engine_502s_on_httpx_timeout(
     # A Gemini call that hangs past its own timeout raises httpx.ReadTimeout,
     # not RuntimeError/subprocess.TimeoutExpired — must still degrade to a
     # clean 502 instead of leaking through as an unhandled 500.
-    monkeypatch.setattr(main_module, "NOTE_ENGINE", "gemini")
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "gemini")
     app.dependency_overrides[get_vault_path] = lambda: tmp_path
 
     response = client.post("/note-chunk", json=_note_chunk_payload())
@@ -509,3 +510,106 @@ def test_finalize_note_502s_when_transcript_refetch_fails(mock_fetch, mock_key, 
 
     assert response.status_code == 502
     assert "no captions" in response.json()["detail"]
+
+
+NOTE_FOR_CARDS = (
+    '---\ntitle: "Linear Algebra 1"\nsource: https://youtube.com/watch?v=a\n---\n\n'
+    "# Linear Algebra 1\n\n## Vectors [00:01:00](url)\n\n* **Vector** is an ordered list of numbers.\n"
+)
+
+
+@patch("sidecar.main.engine_complete")
+def test_export_flashcards_returns_parsed_cards_and_anki_tsv(mock_complete, tmp_path):
+    mock_complete.return_value = (
+        "Q: What is a vector?\nA: An ordered list of numbers.\n"
+        "---\nQ: What is a scalar?\nA: A single number."
+    )
+    (tmp_path / "lec1.md").write_text(NOTE_FOR_CARDS)
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    response = client.post("/export/flashcards", json={"filename": "lec1.md", "tags": "stat110"})
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert payload["cards"][0]["front"] == "What is a vector?"
+    assert payload["tsv"].startswith("#separator:tab")
+    assert "stat110" in payload["tsv"]
+
+
+@patch("sidecar.main.engine_complete")
+def test_export_flashcards_sends_the_note_body_to_the_engine(mock_complete, tmp_path):
+    mock_complete.return_value = "Q: q\nA: a"
+    (tmp_path / "lec1.md").write_text(NOTE_FOR_CARDS)
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    client.post("/export/flashcards", json={"filename": "lec1.md"})
+    app.dependency_overrides.clear()
+
+    prompt = mock_complete.call_args.args[0]
+    assert "ordered list of numbers" in prompt
+    assert "Linear Algebra 1" in prompt
+    assert "source: https://" not in prompt  # frontmatter stripped, not card material
+
+
+@patch("sidecar.main.engine_complete", return_value="I cannot make cards from this.")
+def test_export_flashcards_422s_when_the_model_returns_nothing_usable(mock_complete, tmp_path):
+    (tmp_path / "lec1.md").write_text(NOTE_FOR_CARDS)
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    response = client.post("/export/flashcards", json={"filename": "lec1.md"})
+    app.dependency_overrides.clear()
+    assert response.status_code == 422
+
+
+@patch("sidecar.main.engine_complete", side_effect=RuntimeError("engine exploded"))
+def test_export_flashcards_502s_on_engine_failure(mock_complete, tmp_path):
+    (tmp_path / "lec1.md").write_text(NOTE_FOR_CARDS)
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    response = client.post("/export/flashcards", json={"filename": "lec1.md"})
+    app.dependency_overrides.clear()
+    assert response.status_code == 502
+    assert "engine exploded" in response.json()["detail"]
+
+
+def test_export_flashcards_rejects_path_traversal(tmp_path):
+    secret = tmp_path.parent / "secret.md"
+    secret.write_text("top secret")
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    response = client.post("/export/flashcards", json={"filename": "../secret.md"})
+    app.dependency_overrides.clear()
+    assert response.status_code == 400
+
+
+def test_export_flashcards_404s_when_the_note_is_missing(tmp_path):
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+    response = client.post("/export/flashcards", json={"filename": "nope.md"})
+    app.dependency_overrides.clear()
+    assert response.status_code == 404
+
+
+@patch("sidecar.engine_dispatch.call_haiku")
+def test_note_chunk_autolinks_concepts_against_existing_vault_notes(mock_haiku, tmp_path, monkeypatch):
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(main_module, "AUTOLINK", True)
+    (tmp_path / "eigen.md").write_text('---\ntitle: "Eigenvalues"\n---\n\n# Eigenvalues\n')
+    mock_haiku.return_value = "## Recap [00:05:00](url)\n\nWe revisit eigenvalues today."
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+
+    response = client.post("/note-chunk", json=_note_chunk_payload())
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert "[[Eigenvalues|eigenvalues]]" in response.json()["rendered_section"]
+
+
+@patch("sidecar.engine_dispatch.call_haiku")
+def test_note_chunk_writes_plain_prose_when_autolink_is_disabled(mock_haiku, tmp_path, monkeypatch):
+    monkeypatch.setattr(config_module, "NOTE_ENGINE", "haiku")
+    monkeypatch.setattr(main_module, "AUTOLINK", False)
+    (tmp_path / "eigen.md").write_text('---\ntitle: "Eigenvalues"\n---\n\n# Eigenvalues\n')
+    mock_haiku.return_value = "## Recap [00:05:00](url)\n\nWe revisit eigenvalues today."
+    app.dependency_overrides[get_vault_path] = lambda: tmp_path
+
+    response = client.post("/note-chunk", json=_note_chunk_payload())
+    app.dependency_overrides.clear()
+
+    assert "[[" not in response.json()["rendered_section"]
