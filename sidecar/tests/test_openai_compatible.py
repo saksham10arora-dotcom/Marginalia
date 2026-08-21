@@ -36,12 +36,12 @@ def test_get_provider_raises_a_helpful_error_for_an_unknown_engine():
 
 
 def test_resolve_model_prefers_the_env_override(monkeypatch):
-    monkeypatch.setenv("MARGINALIA_MODEL", "some/custom-model")
+    monkeypatch.setenv("MARGIN_MODEL", "some/custom-model")
     assert resolve_model("groq") == "some/custom-model"
 
 
 def test_resolve_model_falls_back_to_the_registry_default(monkeypatch):
-    monkeypatch.delenv("MARGINALIA_MODEL", raising=False)
+    monkeypatch.delenv("MARGIN_MODEL", raising=False)
     assert resolve_model("groq") == PROVIDERS["groq"].default_model
 
 

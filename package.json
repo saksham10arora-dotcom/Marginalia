@@ -1,5 +1,5 @@
 {
-  "name": "marginalia",
+  "name": "margin",
   "version": "0.1.0",
   "description": "Live lecture notes from YouTube transcripts, written straight to your Obsidian vault.",
   "private": true,
@@ -8,7 +8,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saksham10arora-dotcom/Marginalia.git"
+    "url": "git+https://github.com/saksham10arora-dotcom/Margin.git"
   },
   "scripts": {
     "test": "vitest run"

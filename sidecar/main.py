@@ -282,7 +282,7 @@ def finalize_note(req: FinalizeNoteRequest, vault_path: Path = Depends(get_vault
 
 class FlashcardRequest(BaseModel):
     filename: str
-    tags: str = "marginalia"
+    tags: str = "margin"
 
 
 @app.post("/export/flashcards")

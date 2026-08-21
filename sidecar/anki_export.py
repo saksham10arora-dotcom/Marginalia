@@ -93,7 +93,7 @@ def _tsv_field(text: str) -> str:
     return re.sub(r"\n+", "<br>", text)
 
 
-def cards_to_tsv(cards: list[Flashcard], tags: str = "marginalia") -> str:
+def cards_to_tsv(cards: list[Flashcard], tags: str = "margin") -> str:
     """Three columns: Front, Back, Tags -- Anki's default note type.
 
     The `#` header lines are Anki import directives, not comments: they let the

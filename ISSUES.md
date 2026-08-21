@@ -6,7 +6,7 @@ some point, but no rush now that the repo's public.
 ## Portability (blocks public use)
 
 - ~~`VAULT_PATH` is hardcoded to an absolute path on this machine~~ — done.
-  Now `MARGINALIA_VAULT_PATH` env var, defaults to `~/MarginaliaNotes`,
+  Now `MARGIN_VAULT_PATH` env var, defaults to `~/MarginNotes`,
   auto-created on import so a missing folder can no longer crash the sidecar
   at startup (previously `StaticFiles` mount raised immediately).
 - **`keys.env` location is still `~/.config/keys.env`** with a bespoke regex
@@ -14,16 +14,16 @@ some point, but no rush now that the repo's public.
   at the repo root so the format is at least documented; still not a real
   `.env` a public user would expect by convention.
 - ~~Self-inflicted migration gotcha from the `VAULT_PATH` fix above~~ — done.
-  `MARGINALIA_VAULT_PATH` is now exported permanently in `~/.zshrc`, and the
+  `MARGIN_VAULT_PATH` is now exported permanently in `~/.zshrc`, and the
   sidecar has been restarted under it — confirmed serving the real 18-doc
-  vault, not an empty `~/MarginaliaNotes`.
+  vault, not an empty `~/MarginNotes`.
 - ~~README is stale~~ — done. Full rewrite covering the Gemini engine +
-  `MARGINALIA_ENGINE` toggle, frame capture, multi-key rotation, the
+  `MARGIN_ENGINE` toggle, frame capture, multi-key rotation, the
   finalize-on-stop regeneration step, and the action bar, plus accurate
   test counts (100+34).
-- ~~Project renamed from "HoverNotes Clone" to Marginalia, but the local
+- ~~Project renamed from "HoverNotes Clone" to Margin, but the local
   folder name and GitHub repo URL still don't match~~ — done. GitHub repo is
-  now `Marginalia`, remote updated, git history squashed to drop every old
+  now `Margin`, remote updated, git history squashed to drop every old
   reference.
 
 ## Known bugs
@@ -66,7 +66,7 @@ some point, but no rush now that the repo's public.
   same note.
 - **Vision support is declared, not detected.** `providers.py` hardcodes
   `supports_vision` per provider based on its default model. Override the
-  model with `MARGINALIA_MODEL` and that flag can silently become wrong in
+  model with `MARGIN_MODEL` and that flag can silently become wrong in
   either direction.
 
 ## Reliability
@@ -173,7 +173,7 @@ scratch later.
   Adding a provider is a dict entry.
 - ~~OpenRouter, Fireworks, Cerebras~~ — done, plus Groq, Together, OpenAI,
   and local Ollama / LM Studio. All share one client and one retry policy.
-  `MARGINALIA_MODEL` overrides the model per provider.
+  `MARGIN_MODEL` overrides the model per provider.
 - ~~Vision isn't universal; new providers need a capability flag~~ — done.
   `ProviderSpec.supports_vision` gates frame extraction, so text-only engines
   skip the yt-dlp/ffmpeg cost entirely instead of building images nothing

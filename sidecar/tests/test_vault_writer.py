@@ -46,7 +46,7 @@ def test_build_frontmatter_includes_required_fields():
     # Title should be present with proper quoting (YAML uses single quotes for safe strings)
     assert "title:" in fm and "Lecture 2: Linear Algebra" in fm
     assert "source: https://www.youtube.com/watch?v=0uimNNIuUyY" in fm
-    assert "generated_by: marginalia" in fm
+    assert "generated_by: margin" in fm
     assert "engine: claude-haiku-4-5-20251001" in fm
     assert f'created: "{date.today().isoformat()}"' in fm
 
@@ -60,7 +60,7 @@ def test_build_frontmatter_uses_provided_engine_over_default():
 
 def test_build_frontmatter_always_includes_base_tags_plus_extras():
     fm = build_frontmatter(SAMPLE_META)
-    assert "- marginalia" in fm
+    assert "- margin" in fm
     assert "- youtube" in fm
     assert "- mit-18642" in fm
     assert "- quant" in fm
@@ -69,7 +69,7 @@ def test_build_frontmatter_always_includes_base_tags_plus_extras():
 def test_build_frontmatter_defaults_tags_to_empty_list():
     meta = {**SAMPLE_META, "tags": []}
     fm = build_frontmatter(meta)
-    assert "- marginalia" in fm
+    assert "- margin" in fm
     assert "- youtube" in fm
 
 

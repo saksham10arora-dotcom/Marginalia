@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 
 VERSION=$(node -p "require('./extension/manifest.json').version")
 OUT_DIR="dist"
-OUT="${OUT_DIR}/marginalia-${VERSION}.zip"
+OUT="${OUT_DIR}/margin-${VERSION}.zip"
 
 # Fail loudly on a version mismatch rather than shipping a zip whose manifest
 # disagrees with package.json about what release this is.

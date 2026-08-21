@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Marginalia",
+  "name": "Margin",
   "version": "0.1.0",
   "description": "Live lecture notes from YouTube transcripts, written straight to your Obsidian vault. Optionally includes relevant video screenshots.",
   "permissions": [],
@@ -9,7 +9,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Toggle Marginalia panel",
+    "default_title": "Toggle Margin panel",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

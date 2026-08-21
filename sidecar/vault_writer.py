@@ -27,7 +27,7 @@ def ensure_unique_filename(vault_path: Path, filename: str) -> str:
         counter += 1
 
 
-BASE_TAGS = ["marginalia", "youtube"]
+BASE_TAGS = ["margin", "youtube"]
 
 
 def build_frontmatter(meta: dict) -> str:
@@ -46,7 +46,7 @@ def build_frontmatter(meta: dict) -> str:
         f"author: {author_dumped}\n"
         f'created: "{date.today().isoformat()}"\n'
         f"duration_sec: {meta['duration_sec']}\n"
-        "generated_by: marginalia\n"
+        "generated_by: margin\n"
         f"engine: {meta.get('engine', 'claude-haiku-4-5-20251001')}\n"
         f"tags:\n{tag_lines}\n"
         "---\n"

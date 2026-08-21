@@ -100,7 +100,7 @@ async function exportFlashcards() {
     URL.revokeObjectURL(url);
     if (notice) notice.textContent = `${count} flashcards downloaded — import the .txt into Anki.`;
   } catch (err) {
-    console.error('[Marginalia] flashcard export failed:', err);
+    console.error('[Margin] flashcard export failed:', err);
     if (notice) notice.textContent = `Flashcard export failed: ${err.message}`;
   } finally {
     btn?.classList.remove('hn-busy');
@@ -276,7 +276,7 @@ async function finalizeNote(filename) {
     }
     if (notice) notice.textContent = 'Notes rebuilt with full video context — reopen the note to see them.';
   } catch (err) {
-    console.error('[Marginalia] finalize-note request failed:', err);
+    console.error('[Margin] finalize-note request failed:', err);
     if (notice) notice.textContent = `Finalize failed: ${err.message}`;
   }
 }
@@ -315,7 +315,7 @@ async function sendChunk(chunk) {
     if (data.filename) showRecordingIndicator(data.filename);
     if (data.rendered_section) renderSection(data.rendered_section);
   } catch (err) {
-    console.error('[Marginalia] note-chunk request failed:', err);
+    console.error('[Margin] note-chunk request failed:', err);
     appendError(
       err instanceof TypeError
         ? 'Sidecar unreachable at localhost:8765 — is it running?'

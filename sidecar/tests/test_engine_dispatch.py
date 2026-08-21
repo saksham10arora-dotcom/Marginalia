@@ -27,7 +27,7 @@ def test_engine_label_uses_the_static_map_for_native_engines():
 
 
 def test_engine_label_records_provider_and_model_for_openai_compatible(monkeypatch):
-    monkeypatch.delenv("MARGINALIA_MODEL", raising=False)
+    monkeypatch.delenv("MARGIN_MODEL", raising=False)
     assert engine_dispatch.engine_label("groq") == "groq/llama-3.3-70b-versatile"
 
 

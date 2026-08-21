@@ -79,9 +79,9 @@ def build_messages(
 
 
 def resolve_model(engine: str) -> str:
-    """MARGINALIA_MODEL overrides the registry default, so switching models on
+    """MARGIN_MODEL overrides the registry default, so switching models on
     a provider never needs a code change."""
-    return os.environ.get("MARGINALIA_MODEL") or get_provider(engine).default_model
+    return os.environ.get("MARGIN_MODEL") or get_provider(engine).default_model
 
 
 def post_chat_completion(messages: list[dict], engine: str, api_key: str = "") -> str:

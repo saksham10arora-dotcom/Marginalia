@@ -32,13 +32,13 @@ PROVIDERS: dict[str, ProviderSpec] = {
     "openrouter": ProviderSpec(
         base_url="https://openrouter.ai/api/v1",
         # Routes to whichever upstream is cheapest/healthiest; swap via
-        # MARGINALIA_MODEL for a specific one (e.g. "openai/gpt-4o-mini").
+        # MARGIN_MODEL for a specific one (e.g. "openai/gpt-4o-mini").
         default_model="anthropic/claude-3.5-haiku",
         key_names=["OPENROUTER_API_KEY"],
         supports_vision=True,
         extra_headers={
-            "HTTP-Referer": "https://github.com/saksham10arora-dotcom/Marginalia",
-            "X-Title": "Marginalia",
+            "HTTP-Referer": "https://github.com/saksham10arora-dotcom/Margin",
+            "X-Title": "Margin",
         },
     ),
     "groq": ProviderSpec(
@@ -74,7 +74,7 @@ PROVIDERS: dict[str, ProviderSpec] = {
         supports_vision=True,
     ),
     # Local servers: no key, no cost, no quota. Whatever model you have
-    # pulled -- override with MARGINALIA_MODEL.
+    # pulled -- override with MARGIN_MODEL.
     "ollama": ProviderSpec(
         base_url="http://localhost:11434/v1",
         default_model="llama3.2",

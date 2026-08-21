@@ -1,4 +1,4 @@
-# 📓 Marginalia
+# 📓 Margin
 
 ![Platform](https://img.shields.io/badge/platform-Chrome_Extension-4285F4?style=flat-square)
 ![Manifest](https://img.shields.io/badge/manifest-V3-4285F4?style=flat-square)
@@ -12,12 +12,12 @@
 > _The margin, but of the video instead of the page._
 
 ```
-███╗   ███╗ █████╗ ██████╗  ██████╗ ██╗███╗   ██╗ █████╗ ██╗     ██╗ █████╗ 
-████╗ ████║██╔══██╗██╔══██╗██╔════╝ ██║████╗  ██║██╔══██╗██║     ██║██╔══██╗
-██╔████╔██║███████║██████╔╝██║  ███╗██║██╔██╗ ██║███████║██║     ██║███████║
-██║╚██╔╝██║██╔══██║██╔══██╗██║   ██║██║██║╚██╗██║██╔══██║██║     ██║██╔══██║
-██║ ╚═╝ ██║██║  ██║██║  ██║╚██████╔╝██║██║ ╚████║██║  ██║███████╗██║██║  ██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝
+███╗   ███╗ █████╗ ██████╗  ██████╗ ██╗███╗   ██╗
+████╗ ████║██╔══██╗██╔══██╗██╔════╝ ██║████╗  ██║
+██╔████╔██║███████║██████╔╝██║  ███╗██║██╔██╗ ██║
+██║╚██╔╝██║██╔══██║██╔══██╗██║   ██║██║██║╚██╗██║
+██║ ╚═╝ ██║██║  ██║██║  ██║╚██████╔╝██║██║ ╚████║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝
 ```
 
 ---
@@ -55,7 +55,7 @@ You're watching a lecture. You either:
 
 HoverNotes (the real, paid extension) solves this well. But it's paid, and I wanted to actually understand how a "watch a video, get a live note" pipeline works instead of just paying for someone else's.
 
-This is the problem Marginalia was built to solve.
+This is the problem Margin was built to solve.
 
 ---
 
@@ -76,7 +76,7 @@ YouTube video ──▶ transcript + (optional) video frames ──▶ note-writ
                                                         written into your Obsidian vault
 ```
 
-**Marginalia** is a Chrome extension that:
+**Margin** is a Chrome extension that:
 
 1. **Injects a panel** into any YouTube video page, no click required
 2. **Batches the transcript** into ~60-second chunks as the video plays and POSTs each to a local FastAPI sidecar
@@ -147,7 +147,7 @@ No cloud servers beyond whichever model API you've configured (Anthropic via you
 
 ### The panel, live, mid-lecture
 
-![Marginalia panel open on a Statistics 110 lecture, generating notes with rendered math](assets/preview.png)
+![Margin panel open on a Statistics 110 lecture, generating notes with rendered math](assets/preview.png)
 
 > A real session: Harvard's Stat 110 (Probability), notes generating live in the side panel as the lecture plays, section headers, KaTeX-rendered math, a worked example, all written straight into the vault note in the background.
 
@@ -277,16 +277,16 @@ npm install
 
 ### Step 3: Point it at your own vault (optional)
 
-Defaults to `~/MarginaliaNotes`, created automatically on first run. To point it at an existing [Obsidian](https://obsidian.md) vault instead:
+Defaults to `~/MarginNotes`, created automatically on first run. To point it at an existing [Obsidian](https://obsidian.md) vault instead:
 
 ```bash
-export MARGINALIA_VAULT_PATH=/path/to/your/vault
+export MARGIN_VAULT_PATH=/path/to/your/vault
 ```
 
 On Windows (PowerShell):
 
 ```powershell
-$env:MARGINALIA_VAULT_PATH = "C:\path\to\your\vault"
+$env:MARGIN_VAULT_PATH = "C:\path\to\your\vault"
 ```
 
 ### Step 4: Start the sidecar
@@ -350,7 +350,7 @@ GEMINI_API_KEY_3=AIzaSy...thirdkey...    # optional
 ### Step 3: Start the sidecar with the engine flag
 
 ```bash
-MARGINALIA_ENGINE=gemini uvicorn sidecar.main:app --port 8765
+MARGIN_ENGINE=gemini uvicorn sidecar.main:app --port 8765
 ```
 
 ### Why multiple keys?
@@ -363,7 +363,7 @@ Gemini's free tier caps at 20 `generateContent` calls/day *per key* for `gemini-
 
 ## 🔌 Choosing an Engine
 
-`MARGINALIA_ENGINE` picks who writes the notes. Everything past the first two
+`MARGIN_ENGINE` picks who writes the notes. Everything past the first two
 speaks OpenAI's `/chat/completions`, so adding a provider is a registry entry
 in `sidecar/providers.py`, not a new client module.
 
@@ -382,13 +382,13 @@ in `sidecar/providers.py`, not a new client module.
 
 ```bash
 # Fastest free cloud option
-MARGINALIA_ENGINE=groq uvicorn sidecar.main:app --port 8765
+MARGIN_ENGINE=groq uvicorn sidecar.main:app --port 8765
 
 # Fully local, nothing leaves your machine
-MARGINALIA_ENGINE=ollama MARGINALIA_MODEL=llama3.2 uvicorn sidecar.main:app --port 8765
+MARGIN_ENGINE=ollama MARGIN_MODEL=llama3.2 uvicorn sidecar.main:app --port 8765
 
 # Any specific model on a provider
-MARGINALIA_ENGINE=openrouter MARGINALIA_MODEL=openai/gpt-4o-mini uvicorn sidecar.main:app --port 8765
+MARGIN_ENGINE=openrouter MARGIN_MODEL=openai/gpt-4o-mini uvicorn sidecar.main:app --port 8765
 ```
 
 Frame capture is skipped automatically on text-only engines. It costs real
@@ -435,7 +435,7 @@ that needs no API key.
 
 A note that says "eigenvalues" is dead text. `[[Eigenvalues]]` is a real edge
 in your Obsidian graph, and it shows up in that note's backlinks without you
-doing anything. Marginalia adds those edges as it writes.
+doing anything. Margin adds those edges as it writes.
 
 It refuses to link things that only look like prose: LaTeX, code blocks,
 existing links, headings, and the invisible screenshot markers all come
@@ -464,14 +464,14 @@ Today we connect this to [[Lecture 4: Linear Algebra (cont.); Probability Theory
 
 One edge per destination note, first mention only, capped at 8 per section, so
 notes stay readable instead of turning solid blue. Disable entirely with
-`MARGINALIA_AUTOLINK=0`.
+`MARGIN_AUTOLINK=0`.
 
 ---
 
 ## 📁 File Structure
 
 ```
-marginalia/
+margin/
 ├── extension/
 │   ├── manifest.json          ← MV3 config, host permissions
 │   ├── background.js          ← toolbar-icon click → toggle panel
@@ -509,11 +509,11 @@ marginalia/
 
 | File | Constant | Default | Description |
 |---|---|---|---|
-| `sidecar/config.py` | `NOTE_ENGINE` | `"haiku"` | `MARGINALIA_ENGINE` env var overrides |
-| `sidecar/config.py` | `AUTOLINK` | `True` | `MARGINALIA_AUTOLINK=0` writes plain prose |
+| `sidecar/config.py` | `NOTE_ENGINE` | `"haiku"` | `MARGIN_ENGINE` env var overrides |
+| `sidecar/config.py` | `AUTOLINK` | `True` | `MARGIN_AUTOLINK=0` writes plain prose |
 | `sidecar/config.py` | `MAX_AUTOLINKS_PER_SECTION` | `8` | Wikilink cap per generated section |
-| `sidecar/config.py` | `VAULT_PATH` | `~/MarginaliaNotes` | `MARGINALIA_VAULT_PATH` env var overrides |
-| `sidecar/providers.py` | `PROVIDERS` | 8 providers | `MARGINALIA_MODEL` overrides any default model |
+| `sidecar/config.py` | `VAULT_PATH` | `~/MarginNotes` | `MARGIN_VAULT_PATH` env var overrides |
+| `sidecar/providers.py` | `PROVIDERS` | 8 providers | `MARGIN_MODEL` overrides any default model |
 | `sidecar/anki_export.py` | `MAX_CARDS` | `25` | Cap on flashcards per note |
 | `sidecar/vault_linker.py` | `MIN_TITLE_LENGTH` | `4` | Below this, titles are too generic to link |
 | `sidecar/frame_extractor.py` | `interval` | `3.0` sec | How often a candidate frame is sampled |

@@ -1,6 +1,6 @@
 /* extension/panel.css */
 
-#marginalia-panel {
+#margin-panel {
   --hn-bg: #17171a;
   --hn-surface: #1c1c20;
   --hn-surface-2: #212126;
@@ -36,11 +36,11 @@
   box-shadow: var(--hn-shadow-panel);
 }
 
-#marginalia-panel * {
+#margin-panel * {
   box-sizing: border-box;
 }
 
-#marginalia-panel svg {
+#margin-panel svg {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
@@ -48,7 +48,7 @@
 
 /* ---------- Header ---------- */
 
-#marginalia-panel .hn-header {
+#margin-panel .hn-header {
   height: 52px;
   padding: 0 8px 0 16px;
   border-bottom: 1px solid var(--hn-border);
@@ -58,7 +58,7 @@
   flex-shrink: 0;
 }
 
-#marginalia-panel .hn-brand {
+#margin-panel .hn-brand {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -68,7 +68,7 @@
   color: var(--hn-text);
 }
 
-#marginalia-panel .hn-brand-dot {
+#margin-panel .hn-brand-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -76,7 +76,7 @@
   flex-shrink: 0;
 }
 
-#marginalia-panel .hn-header-actions {
+#margin-panel .hn-header-actions {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -84,7 +84,7 @@
 
 /* ---------- Sidecar status ---------- */
 
-#marginalia-panel .hn-status {
+#margin-panel .hn-status {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -97,7 +97,7 @@
   white-space: nowrap;
 }
 
-#marginalia-panel .hn-status-dot {
+#margin-panel .hn-status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -106,18 +106,18 @@
   transition: background 200ms ease-out;
 }
 
-#marginalia-panel .hn-status[data-state="online"] .hn-status-dot {
+#margin-panel .hn-status[data-state="online"] .hn-status-dot {
   background: var(--hn-success);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--hn-success) 20%, transparent);
 }
 
-#marginalia-panel .hn-status[data-state="offline"] .hn-status-dot {
+#margin-panel .hn-status[data-state="offline"] .hn-status-dot {
   background: var(--hn-danger);
 }
 
 /* ---------- Recording-to indicator ---------- */
 
-#marginalia-panel .hn-recording {
+#margin-panel .hn-recording {
   display: none;
   align-items: center;
   gap: 8px;
@@ -129,11 +129,11 @@
   flex-shrink: 0;
 }
 
-#marginalia-panel .hn-recording.hn-visible {
+#margin-panel .hn-recording.hn-visible {
   display: flex;
 }
 
-#marginalia-panel .hn-recording-dot {
+#margin-panel .hn-recording-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -143,7 +143,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #marginalia-panel .hn-recording-dot {
+  #margin-panel .hn-recording-dot {
     animation: none;
   }
 }
@@ -153,12 +153,12 @@
   50% { opacity: 0.35; }
 }
 
-#marginalia-panel .hn-recording-label {
+#margin-panel .hn-recording-label {
   color: var(--hn-text-faint);
   flex-shrink: 0;
 }
 
-#marginalia-panel .hn-recording-name {
+#margin-panel .hn-recording-name {
   color: var(--hn-text);
   font-weight: 500;
   overflow: hidden;
@@ -168,7 +168,7 @@
 
 /* ---------- Icon buttons ---------- */
 
-#marginalia-panel .hn-icon-btn {
+#margin-panel .hn-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,21 +183,21 @@
   transition: background 150ms ease-out, color 150ms ease-out;
 }
 
-#marginalia-panel .hn-icon-btn:hover {
+#margin-panel .hn-icon-btn:hover {
   background: var(--hn-surface-2);
   color: var(--hn-text);
 }
 
-#marginalia-panel .hn-icon-btn:focus-visible,
-#marginalia-panel button:focus-visible,
-#marginalia-panel input:focus-visible {
+#margin-panel .hn-icon-btn:focus-visible,
+#margin-panel button:focus-visible,
+#margin-panel input:focus-visible {
   outline: 2px solid var(--hn-accent);
   outline-offset: 1px;
 }
 
 /* ---------- Action bar ---------- */
 
-#marginalia-panel .hn-actionbar {
+#margin-panel .hn-actionbar {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -209,13 +209,13 @@
 
 /* ---------- Body / notes content ---------- */
 
-#marginalia-panel .hn-body {
+#margin-panel .hn-body {
   flex: 1;
   overflow-y: auto;
   padding: 22px 20px 28px;
 }
 
-#marginalia-panel .hn-empty {
+#margin-panel .hn-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -227,27 +227,27 @@
   color: var(--hn-text-faint);
 }
 
-#marginalia-panel .hn-empty svg {
+#margin-panel .hn-empty svg {
   width: 28px;
   height: 28px;
   color: var(--hn-text-faint);
 }
 
-#marginalia-panel .hn-empty p {
+#margin-panel .hn-empty p {
   margin: 0;
   font-size: 13px;
   color: var(--hn-text-muted);
   max-width: 26ch;
 }
 
-#marginalia-panel .hn-viewer-bar {
+#margin-panel .hn-viewer-bar {
   margin: -18px -16px 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--hn-border);
   background: var(--hn-surface);
 }
 
-#marginalia-panel .hn-viewer-bar button {
+#margin-panel .hn-viewer-bar button {
   background: none;
   border: none;
   padding: 0;
@@ -256,18 +256,18 @@
   cursor: pointer;
 }
 
-#marginalia-panel .hn-viewer-bar button:hover {
+#margin-panel .hn-viewer-bar button:hover {
   text-decoration: underline;
 }
 
-#marginalia-panel .hn-viewer-loading {
+#margin-panel .hn-viewer-loading {
   color: var(--hn-text-faint);
   font-size: 12px;
   text-align: center;
   padding: 24px;
 }
 
-#marginalia-panel .hn-error {
+#margin-panel .hn-error {
   color: var(--hn-danger);
   background: color-mix(in srgb, var(--hn-danger) 12%, var(--hn-surface));
   border: 1px solid color-mix(in srgb, var(--hn-danger) 30%, transparent);
@@ -277,7 +277,7 @@
   margin: 0 0 12px;
 }
 
-#marginalia-panel .hn-notice {
+#margin-panel .hn-notice {
   color: var(--hn-success);
   background: color-mix(in srgb, var(--hn-success) 12%, var(--hn-surface));
   border: 1px solid color-mix(in srgb, var(--hn-success) 30%, transparent);
@@ -287,19 +287,19 @@
   margin: 0 0 12px;
 }
 
-#marginalia-panel .hn-section {
+#margin-panel .hn-section {
   margin-bottom: 28px;
   padding-bottom: 28px;
   border-bottom: 1px solid var(--hn-border-subtle);
 }
 
-#marginalia-panel .hn-section:last-child {
+#margin-panel .hn-section:last-child {
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
 }
 
-#marginalia-panel .hn-body h2 {
+#margin-panel .hn-body h2 {
   font-size: 16.5px;
   font-weight: 650;
   letter-spacing: -0.015em;
@@ -308,7 +308,7 @@
   color: var(--hn-text);
 }
 
-#marginalia-panel .hn-body h3 {
+#margin-panel .hn-body h3 {
   font-size: 14.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -316,64 +316,64 @@
   color: var(--hn-text);
 }
 
-#marginalia-panel .hn-body p {
+#margin-panel .hn-body p {
   margin: 0 0 14px;
   color: var(--hn-text);
   line-height: 1.65;
 }
 
-#marginalia-panel .hn-body ul,
-#marginalia-panel .hn-body ol {
+#margin-panel .hn-body ul,
+#margin-panel .hn-body ol {
   margin: 0 0 14px;
   padding-left: 20px;
 }
 
-#marginalia-panel .hn-body li {
+#margin-panel .hn-body li {
   margin-bottom: 10px;
   color: var(--hn-text);
   line-height: 1.65;
 }
 
-#marginalia-panel .hn-body li:last-child {
+#margin-panel .hn-body li:last-child {
   margin-bottom: 0;
 }
 
-#marginalia-panel .hn-body li::marker {
+#margin-panel .hn-body li::marker {
   color: var(--hn-text-faint);
 }
 
-#marginalia-panel .hn-body strong {
+#margin-panel .hn-body strong {
   font-weight: 600;
   color: var(--hn-text);
 }
 
-#marginalia-panel .hn-body a {
+#margin-panel .hn-body a {
   color: var(--hn-link);
   text-decoration: none;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
 
-#marginalia-panel .hn-body a:hover {
+#margin-panel .hn-body a:hover {
   text-decoration: underline;
 }
 
-#marginalia-panel .hn-body::-webkit-scrollbar {
+#margin-panel .hn-body::-webkit-scrollbar {
   width: 8px;
 }
 
-#marginalia-panel .hn-body::-webkit-scrollbar-thumb {
+#margin-panel .hn-body::-webkit-scrollbar-thumb {
   background: var(--hn-border);
   border-radius: 999px;
 }
 
-#marginalia-panel .hn-body::-webkit-scrollbar-track {
+#margin-panel .hn-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
 /* ---------- Toolbar ---------- */
 
-#marginalia-panel .hn-toolbar {
+#margin-panel .hn-toolbar {
   padding: 10px 12px;
   border-top: 1px solid var(--hn-border);
   display: flex;
@@ -384,7 +384,7 @@
   background: var(--hn-surface);
 }
 
-#marginalia-panel .hn-shortcut-hint {
+#margin-panel .hn-shortcut-hint {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -395,7 +395,7 @@
   white-space: nowrap;
 }
 
-#marginalia-panel .hn-kbd {
+#margin-panel .hn-kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -410,7 +410,7 @@
   color: var(--hn-text-muted);
 }
 
-#marginalia-panel button.hn-btn {
+#margin-panel button.hn-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -425,41 +425,41 @@
   transition: background 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, transform 100ms ease-out;
 }
 
-#marginalia-panel button.hn-btn:hover {
+#margin-panel button.hn-btn:hover {
   background: #2a2a30;
   border-color: #3a3a42;
 }
 
-#marginalia-panel button.hn-btn:active {
+#margin-panel button.hn-btn:active {
   transform: scale(0.97);
 }
 
-#marginalia-panel button.hn-btn-primary {
+#margin-panel button.hn-btn-primary {
   background: var(--hn-accent);
   border-color: var(--hn-accent);
   color: var(--hn-accent-ink);
 }
 
-#marginalia-panel button.hn-btn-primary:hover {
+#margin-panel button.hn-btn-primary:hover {
   background: var(--hn-accent-hover);
   border-color: var(--hn-accent-hover);
 }
 
-#marginalia-panel button.hn-btn-primary .hn-btn-icon {
+#margin-panel button.hn-btn-primary .hn-btn-icon {
   color: var(--hn-accent-ink);
 }
 
-#marginalia-panel button.hn-active {
+#margin-panel button.hn-active {
   background: var(--hn-surface-2);
   border-color: var(--hn-danger);
   color: var(--hn-danger);
 }
 
-#marginalia-panel button.hn-active .hn-btn-icon {
+#margin-panel button.hn-active .hn-btn-icon {
   color: var(--hn-danger);
 }
 
-#marginalia-panel .hn-btn-icon {
+#margin-panel .hn-btn-icon {
   display: flex;
   color: inherit;
 }
@@ -580,7 +580,7 @@
 
 /* Action-bar button mid-request (flashcard generation takes a few seconds,
    so the button needs to visibly stop accepting clicks). */
-#marginalia-panel .hn-icon-btn.hn-busy {
+#margin-panel .hn-icon-btn.hn-busy {
   opacity: 0.5;
   pointer-events: none;
 }

@@ -1,6 +1,6 @@
 // extension/content-script.js
 const SIDECAR_URL = 'http://localhost:8765';
-const PANEL_WIDTH = '420px'; // must match #marginalia-panel's width in panel.css
+const PANEL_WIDTH = '420px'; // must match #margin-panel's width in panel.css
 let statusPollIntervalId = null;
 
 // YouTube's player sizes itself off window.innerWidth via JS, not CSS, so
@@ -42,15 +42,15 @@ function startStatusPolling() {
 }
 
 function injectPanel() {
-  if (document.getElementById('marginalia-panel')) return;
+  if (document.getElementById('margin-panel')) return;
 
   const panel = document.createElement('div');
-  panel.id = 'marginalia-panel';
+  panel.id = 'margin-panel';
   panel.innerHTML = `
     <div class="hn-header">
       <div class="hn-brand">
         <span class="hn-brand-dot"></span>
-        Marginalia
+        Margin
       </div>
       <div class="hn-header-actions">
         <span class="hn-status" id="hn-status" data-state="unknown">
@@ -138,7 +138,7 @@ if (location.href.includes('/watch')) injectPanel();
 // automatically per page load.
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type !== 'hn:toggle-panel') return;
-  const existing = document.getElementById('marginalia-panel');
+  const existing = document.getElementById('margin-panel');
   if (existing) {
     document.getElementById('hn-close')?.click();
   } else if (location.href.includes('/watch')) {
