@@ -118,12 +118,20 @@ some point, but no rush now that the repo's public.
   `currentFocus()` can briefly reflect the previous session's saved-file view.
   Not a crash, just confusable — worth resetting explicitly in the `hn-close`
   handler.
-- **No Windows support documented.** `source venv/bin/activate` appears 3x in
-  the README with no `venv\Scripts\activate` equivalent or caveat.
-- **No stated Python version floor.** Code uses `str | None` union syntax
-  (3.10+ only) with nothing in the README or a `.python-version` file saying
-  so — fails with a confusing `TypeError` on older Pythons instead of a clear
-  version error.
+- ~~No Windows support documented~~ — done, and the underlying claim was
+  wrong. CI now runs the full sidecar suite on `windows-latest` against
+  Python 3.10 and 3.13 and it passes, so the *codebase* was never
+  macOS/Linux-only; only the docs were. README now states all three
+  platforms and gives the PowerShell variants. The one genuinely unverified
+  Windows path is frame capture: the yt-dlp/ffmpeg subprocess calls are
+  mocked in tests, so CI proves nothing about them.
+- ~~No stated Python version floor~~ — mostly done. The README's
+  Prerequisites line now says Python 3.10+, and CI pins 3.10 as the floor it
+  actually tests, so the requirement is both documented and enforced. Still
+  missing a machine-readable declaration (`.python-version`, or a
+  `requires-python` in a `pyproject.toml`), so a user on 3.9 still gets a
+  `TypeError` at import rather than a clean "unsupported version" error from
+  pip.
 - **`assets/preview.png` (1.7MB) + `assets/demo.gif` (2.2MB) are committed
   as regular git blobs**, not Git LFS. Fine at this size, but every future
   clone pays that ~4MB forever since it's baked into history now (squashed
@@ -179,12 +187,18 @@ scratch later.
 - **Still to do:** per-engine finalize (see the Gemini-only limitation
   above), and automatic fallback when a provider is down or out of quota.
 
-### Every OS (currently macOS/Linux, informally)
+### Every OS ~~(currently macOS/Linux, informally)~~ — largely DONE
 
-- Already tracked above (no Windows testing, `venv/bin/activate` throughout
-  the README). Restating here as part of the bigger picture: real
-  cross-platform support means CI running the test suite on Windows/macOS/
-  Linux, not just "probably works since it's mostly pathlib."
+- ~~Real cross-platform support means CI running the test suite on
+  Windows/macOS/Linux, not just "probably works since it's mostly pathlib"~~
+  — done. That matrix now exists and passes, which retired the
+  "macOS/Linux only" claim rather than confirming it.
+- **Still unproven on Windows:** frame capture. `extract_candidate_frames`
+  shells out to `yt-dlp` and `ffmpeg`, and those calls are mocked in every
+  test, so a green Windows CI run says nothing about whether the real
+  subprocess path works there (binary discovery on `PATH`, temp-file
+  handling, path quoting). Needs one manual run on a real Windows machine
+  with the Gemini engine before claiming it works.
 
 ### Beyond YouTube: local files, Coursera, Udemy, etc.
 

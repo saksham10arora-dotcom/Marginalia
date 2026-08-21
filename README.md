@@ -252,7 +252,9 @@ Why download the clip instead of handing `ffmpeg` a raw stream URL directly? Con
 
 Since this is a personal, unpublished project, it runs from source in **Developer Mode**.
 
-**Prerequisites:** Python 3.10+, Node.js, [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) and `ffmpeg` on your `PATH` (only needed for the optional Gemini engine's frame capture; skip those two if you're sticking with the default Haiku engine). Currently macOS/Linux only; Windows isn't tested (see [ISSUES.md](ISSUES.md)).
+**Prerequisites:** Python 3.10+, Node.js, [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) and `ffmpeg` on your `PATH` (only needed for the optional Gemini engine's frame capture; skip those two if you're sticking with the default Haiku engine).
+
+**Platform:** macOS, Linux and Windows. The sidecar's full test suite runs on all three in CI against Python 3.10 and 3.13. Commands below are shown for macOS/Linux with a Windows variant where they differ. The one genuinely unverified path on Windows is frame capture, since the yt-dlp/ffmpeg subprocess calls are mocked in tests and have only been exercised by hand on macOS.
 
 **No Claude Pro/Max?** The default engine below needs an existing `claude` CLI login. If you don't have one, skip straight to [Setting Up the Gemini Engine](#-setting-up-the-gemini-engine-optional) instead: free API key, no CLI required.
 
@@ -268,7 +270,7 @@ claude -p --model haiku "say hi"
 
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r sidecar/requirements.txt
 npm install
 ```
@@ -281,10 +283,22 @@ Defaults to `~/MarginaliaNotes`, created automatically on first run. To point it
 export MARGINALIA_VAULT_PATH=/path/to/your/vault
 ```
 
+On Windows (PowerShell):
+
+```powershell
+$env:MARGINALIA_VAULT_PATH = "C:\path\to\your\vault"
+```
+
 ### Step 4: Start the sidecar
 
 ```bash
 source venv/bin/activate && uvicorn sidecar.main:app --port 8765
+```
+
+On Windows (PowerShell):
+
+```powershell
+venv\Scripts\activate; uvicorn sidecar.main:app --port 8765
 ```
 
 ### Step 5: Load the extension
@@ -514,7 +528,7 @@ marginalia/
 
 ```bash
 # Sidecar (177 tests)
-source venv/bin/activate && python -m pytest sidecar/tests/ -v
+source venv/bin/activate && python -m pytest sidecar/tests/ -v   # Windows: venv\Scripts\activate
 
 # Extension pure-logic units (36 tests)
 npm test
